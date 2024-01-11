@@ -162,3 +162,4 @@ dmypy.json
 
 # Loaded LibriSpeech dataset
 recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset/
+miniproject_demo_data/
