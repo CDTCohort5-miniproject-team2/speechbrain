@@ -2,7 +2,7 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:2
 
 module load Anaconda3/2022.10
 module load FFmpeg/4.3.2-GCCcore-10.3.0
