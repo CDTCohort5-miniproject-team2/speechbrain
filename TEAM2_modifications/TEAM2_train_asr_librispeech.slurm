@@ -2,8 +2,8 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:4
-#SBATCH --mem=80G
+#SBATCH --gres=gpu:2
+#SBATCH --mem=32G
 
 module load Anaconda3/2022.10
 source activate speechbrain_venv
