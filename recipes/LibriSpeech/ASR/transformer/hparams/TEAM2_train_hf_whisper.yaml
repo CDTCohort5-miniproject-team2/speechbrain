@@ -22,7 +22,7 @@ language: english
 normalized_transcripts: True
 
 # Data files
-data_folder: LibriSpeech_dataset # e,g./path/to/LibriSpeech
+data_folder: /users/acp23jlc/miniproject/speechbrain/recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset # providing absolute path for now, TODO: debug
 train_splits: ["train-clean-100"] # ["train-clean-100", "train-clean-360", "train-other-500"]
 dev_splits: ["dev-clean"]
 test_splits: ["test-clean"] # ["test-clean", "test-other"]

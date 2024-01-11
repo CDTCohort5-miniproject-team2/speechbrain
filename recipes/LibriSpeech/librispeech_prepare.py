@@ -445,6 +445,8 @@ def check_librispeech_folders(data_folder, splits):
     OSError
         If LibriSpeech is not found at the specified path.
     """
+    print(f"The current working directory running check_librispeech_folders is: {os.getcwd()}")
+
     # Checking if all the splits exist
     for split in splits:
         split_folder = os.path.join(data_folder, split)
