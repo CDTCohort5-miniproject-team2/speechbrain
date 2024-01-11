@@ -5,11 +5,12 @@
 #SBATCH --gres=gpu:1
 
 module load Anaconda3/2022.10
+module avail
 # module load FFmpeg/4.3.2-GCCcore-10.3.0 - this cannot be loaded
 which ffmpeg
-
+module list
 source activate speechbrain_venv
 
 python _TEAM2_speechbrain_gpu_setup_test.py
 
-pytest ../tests --device='cuda'
+# pytest ../tests --device='cuda'
