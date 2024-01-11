@@ -159,3 +159,6 @@ dmypy.json
 
 # Mac OS
 .DS_Store
+
+# Loaded LibriSpeech dataset
+recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset/
