@@ -33,7 +33,7 @@ class MicListener:
         (self.get_speech_timestamps, self.save_audio, self.read_audio, self.VADIterator, self.collect_chunks) = vad_utils
 
     def transcribe(self, wavfile):
-
+        # TODO: implement transcription method here
         transcribed_text = ""
         return transcribed_text
 
