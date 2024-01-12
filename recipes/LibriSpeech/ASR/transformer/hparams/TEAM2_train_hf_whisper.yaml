@@ -80,9 +80,21 @@ test_loader_kwargs:
 epoch_counter: !new:speechbrain.utils.epoch_loop.EpochCounter
     limit: !ref <number_of_epochs>
 
+# TODO: remove TimeDomainSpecAugment once the EnvCorrupt augmentation below has been successfully set up
 augmentation: !new:speechbrain.lobes.augment.TimeDomainSpecAugment
     sample_rate: !ref <sample_rate>
     speeds: [95, 100, 105]
+
+# TODO: select noises and create noise_csv (to replace the PLACEHOLDER below), and modify the other arguments below
+# TODO: noise_csv must use the SpeechBrain Extended CSV data format, i.e. must have 'ID' and 'duration' fields.
+#augmentation: !new:speechbrain.lobes.augment.EnvCorrupt
+#    noise_csv: PLACEHOLDER
+#    reverb_prob: 0.0
+#    babble_prob: 0.0
+#    noise_prob: 1.0
+#    noise_snr_low: 1.0
+#    noise_snr_high: 5.0
+
 
 whisper: !new:speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper
     source: !ref <whisper_hub>
