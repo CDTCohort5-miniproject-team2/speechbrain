@@ -27,11 +27,10 @@ train_splits: ["train-clean-100"] # ["train-clean-100", "train-clean-360", "trai
 dev_splits: ["dev-clean"]
 test_splits: ["test-clean"] # ["test-clean", "test-other"]
 skip_prep: False
-train_csv: !ref <output_folder>/train.csv
+train_csv: !ref <output_folder>/train-clean-100.csv
 valid_csv: !ref <output_folder>/dev-clean.csv
 test_csv:
     - !ref <output_folder>/test-clean.csv
-    - !ref <output_folder>/test-other.csv
 
 ckpt_interval_minutes: 30 # save checkpoint every N min
 
