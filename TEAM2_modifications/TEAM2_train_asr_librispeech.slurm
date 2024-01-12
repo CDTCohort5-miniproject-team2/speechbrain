@@ -4,6 +4,7 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:2
 #SBATCH --mem=32G
+#SBATCH --output=train_asr-%j.out
 
 module load Anaconda3/2022.10
 source activate speechbrain_venv
