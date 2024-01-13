@@ -93,12 +93,12 @@ class ASR(sb.Brain):
             # TEAM2 - added lower() to check if this changes WER
             if hasattr(self.hparams, "normalized_transcripts"):
                 predicted_words = [
-                    self.tokenizer._normalize(text).lower().split(" ")
+                    self.tokenizer._normalize(text).split(" ")
                     for text in predicted_words
                 ]
 
                 target_words = [
-                    self.tokenizer._normalize(text).lower().split(" ")
+                    self.tokenizer._normalize(text).split(" ")
                     for text in target_words
                 ]
             else:
@@ -305,6 +305,8 @@ if __name__ == "__main__":
     )
 
     # We load the pretrained whisper model
+    # TODO: Team2 - query whether this is needed, because speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper
+    #  is already loading pre-trained
     if "pretrainer" in hparams.keys():
         run_on_main(hparams["pretrainer"].collect_files)
         hparams["pretrainer"].load_collected(asr_brain.device)

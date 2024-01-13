@@ -63,7 +63,7 @@ max_decode_ratio: 1.0
 test_beam_size: 8
 
 # Model parameters
-freeze_whisper: False
+freeze_whisper: True
 
 
 train_loader_kwargs:
@@ -104,7 +104,7 @@ whisper: !new:speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper
     save_path: !ref <whisper_folder>
     encoder_only: False
 
-## TODO: might not be needed for now
+# TODO: might not be needed for now? Because it looks like speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper (above) is already loading pre-trained
 #pretrainer: !new:speechbrain.utils.parameter_transfer.Pretrainer
 #    loadables:
 #        whisper: !ref <whisper>
