@@ -102,6 +102,11 @@ whisper: !new:speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper
     save_path: !ref <whisper_folder>
     encoder_only: False
 
+# TODO: trying to load a pre-trained checkpoint - test if implemented correctly, then try loading faster-whisper pre-trained model
+pretrainer: !new:speechbrain.utils.parameter_transfer.Pretrainer
+    loadables:
+        whisper: !ref <whisper>
+
 log_softmax: !new:speechbrain.nnet.activations.Softmax
     apply_log: True
 
