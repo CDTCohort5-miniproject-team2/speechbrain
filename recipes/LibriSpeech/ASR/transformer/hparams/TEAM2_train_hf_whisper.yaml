@@ -13,7 +13,7 @@ save_folder: !ref <output_folder>/save
 train_log: !ref <output_folder>/train_log.txt
 
 # URL for the biggest Fairseq english whisper model.
-whisper_hub: openai/whisper-tiny # TODO: try changing to faster-whisper
+whisper_hub: openai/whisper-tiny.en # TODO: TEAM2 - confirm which model to use
 whisper_folder: !ref <save_folder>/whisper_checkpoint
 language: english
 
@@ -80,13 +80,13 @@ test_loader_kwargs:
 epoch_counter: !new:speechbrain.utils.epoch_loop.EpochCounter
     limit: !ref <number_of_epochs>
 
-# TODO: remove TimeDomainSpecAugment once the EnvCorrupt augmentation below has been successfully set up
+# TODO: TEAM2 - remove TimeDomainSpecAugment once the EnvCorrupt augmentation below has been successfully set up
 augmentation: !new:speechbrain.lobes.augment.TimeDomainSpecAugment
     sample_rate: !ref <sample_rate>
     speeds: [95, 100, 105]
 
-# TODO: select noises and create noise_csv (to replace the PLACEHOLDER below), and modify the other arguments below
-# TODO: noise_csv must use the SpeechBrain Extended CSV data format, i.e. must have 'ID' and 'duration' fields.
+# TODO: TEAM2 - select noises and create noise_csv (to replace the PLACEHOLDER below), and modify the other arguments below
+# TODO: TEAM2 - noise_csv must use the SpeechBrain Extended CSV data format, i.e. must have 'ID' and 'duration' fields.
 #augmentation: !new:speechbrain.lobes.augment.EnvCorrupt
 #    noise_csv: PLACEHOLDER
 #    reverb_prob: 0.0
@@ -95,17 +95,18 @@ augmentation: !new:speechbrain.lobes.augment.TimeDomainSpecAugment
 #    noise_snr_low: 1.0
 #    noise_snr_high: 5.0
 
-
+#
 whisper: !new:speechbrain.lobes.models.huggingface_whisper.HuggingFaceWhisper
     source: !ref <whisper_hub>
     freeze: !ref <freeze_whisper>
     save_path: !ref <whisper_folder>
     encoder_only: False
 
-# TODO: trying to load a pre-trained checkpoint - test if implemented correctly, then try loading faster-whisper pre-trained model
-pretrainer: !new:speechbrain.utils.parameter_transfer.Pretrainer
-    loadables:
-        whisper: !ref <whisper>
+## TODO: might not be needed for now
+#pretrainer: !new:speechbrain.utils.parameter_transfer.Pretrainer
+#    loadables:
+#        whisper: !ref <whisper>
+#        path: !ref <whisper_hub>
 
 log_softmax: !new:speechbrain.nnet.activations.Softmax
     apply_log: True
