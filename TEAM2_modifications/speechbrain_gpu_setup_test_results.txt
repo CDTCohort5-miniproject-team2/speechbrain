@@ -1,0 +1,1139 @@
+
+Currently Loaded Modules:
+  1) Anaconda3/2022.10
+
+ 
+
+CUDA is available: True
+Current device: 0
+Default device ref: <torch.cuda.device object at 0x7f97a4998f40>
+No. of GPUs: 2
+Name of default device: NVIDIA A100-SXM4-80GB
+============================= test session starts ==============================
+platform linux -- Python 3.9.18, pytest-7.4.0, pluggy-1.0.0
+rootdir: /users/acp23jlc/miniproject/speechbrain
+configfile: pytest.ini
+collected 151 items / 1 skipped
+
+../tests/consistency/test_docstrings.py F                                [  0%]
+../tests/consistency/test_recipe.py FFFF                                 [  3%]
+../tests/consistency/test_yaml.py F                                      [  3%]
+../tests/integration/ASR_CTC/example_asr_ctc_experiment.py .             [  4%]
+../tests/integration/ASR_CTC/example_asr_ctc_experiment_complex_net.py . [  5%]
+                                                                         [  5%]
+../tests/integration/ASR_CTC/example_asr_ctc_experiment_quaternion_net.py . [  5%]
+                                                                         [  5%]
+../tests/integration/ASR_Transducer/example_asr_transducer_experiment.py . [  6%]
+                                                                         [  6%]
+../tests/integration/ASR_alignment_forward/example_asr_alignment_forward_experiment.py . [  7%]
+                                                                         [  7%]
+../tests/integration/ASR_alignment_viterbi/example_asr_alignment_viterbi_experiment.py . [  7%]
+                                                                         [  7%]
+../tests/integration/ASR_seq2seq/example_asr_seq2seq_experiment.py .     [  8%]
+../tests/integration/G2P/example_g2p.py .                                [  9%]
+../tests/integration/LM_RNN/example_lm_rnn_experiment.py .               [  9%]
+../tests/integration/PLDA/example_plda_experiment.py .                   [ 10%]
+../tests/integration/VAD/example_vad.py .                                [ 11%]
+../tests/integration/augmentation/example_add_babble.py .                [ 11%]
+../tests/integration/augmentation/example_add_noise.py .                 [ 12%]
+../tests/integration/augmentation/example_add_reverb.py .                [ 13%]
+../tests/integration/augmentation/example_do_clip.py .                   [ 13%]
+../tests/integration/augmentation/example_drop_chunk.py .                [ 14%]
+../tests/integration/augmentation/example_drop_freq.py .                 [ 15%]
+../tests/integration/augmentation/example_speed_perturb.py .             [ 15%]
+../tests/integration/autoencoder/example_auto_experiment.py .            [ 16%]
+../tests/integration/enhance_GAN/example_enhance_gan_experiment.py .     [ 17%]
+../tests/integration/sampling/example_sorting.py ..                      [ 18%]
+../tests/integration/separation/example_conv_tasnet.py .                 [ 19%]
+../tests/integration/speaker_id/example_xvector_experiment.py .          [ 19%]
+../tests/unittests/test_CNN.py ...F                                      [ 22%]
+../tests/unittests/test_RNN.py .                                         [ 23%]
+../tests/unittests/test_activations.py .                                 [ 23%]
+../tests/unittests/test_arpa.py ..                                       [ 25%]
+../tests/unittests/test_attention.py .                                   [ 25%]
+../tests/unittests/test_augment.py .......F......                        [ 35%]
+../tests/unittests/test_batching.py ...                                  [ 37%]
+../tests/unittests/test_callchains.py ..                                 [ 38%]
+../tests/unittests/test_categorical_encoder.py ......                    [ 42%]
+../tests/unittests/test_checkpoints.py .......                           [ 47%]
+../tests/unittests/test_core.py ..                                       [ 48%]
+../tests/unittests/test_counting.py ...                                  [ 50%]
+../tests/unittests/test_data_io.py ...                                   [ 52%]
+../tests/unittests/test_data_pipeline.py ...                             [ 54%]
+../tests/unittests/test_dataloader.py ...                                [ 56%]
+../tests/unittests/test_dataset.py ..                                    [ 57%]
+../tests/unittests/test_dependency_graph.py .                            [ 58%]
+../tests/unittests/test_diffusion.py ..                                  [ 59%]
+../tests/unittests/test_dropout.py .                                     [ 60%]
+../tests/unittests/test_edit_distance.py ....                            [ 62%]
+../tests/unittests/test_embedding.py .                                   [ 63%]
+../tests/unittests/test_epoch_loop.py .                                  [ 64%]
+../tests/unittests/test_features.py .......                              [ 68%]
+../tests/unittests/test_g2p.py ..                                        [ 70%]
+../tests/unittests/test_hpopt.py ...                                     [ 72%]
+../tests/unittests/test_linear.py .                                      [ 72%]
+../tests/unittests/test_losses.py ......s...                             [ 79%]
+../tests/unittests/test_metrics.py ........                              [ 84%]
+../tests/unittests/test_multi_mic.py .                                   [ 85%]
+../tests/unittests/test_ngram_lm.py .                                    [ 86%]
+../tests/unittests/test_normalization.py ......                          [ 90%]
+../tests/unittests/test_parallel.py .                                    [ 90%]
+../tests/unittests/test_pooling.py ..                                    [ 92%]
+../tests/unittests/test_pretrainer.py .                                  [ 92%]
+../tests/unittests/test_profiling.py ......                              [ 96%]
+../tests/unittests/test_samplers.py .                                    [ 97%]
+../tests/unittests/test_schedulers.py .                                  [ 98%]
+../tests/unittests/test_signal_processing.py .                           [ 98%]
+../tests/unittests/test_superpowers.py .                                 [ 99%]
+../tests/unittests/test_tokenizer.py F                                   [100%]
+
+=================================== FAILURES ===================================
+_______________________________ test_recipe_list _______________________________
+
+base_folder = '.'
+
+    def test_recipe_list(base_folder="."):
+        check_folders = ["speechbrain", "tools", "templates"]
+>       assert check_docstrings(base_folder, check_folders)
+E       AssertionError: assert False
+E        +  where False = check_docstrings('.', ['speechbrain', 'tools', 'templates'])
+
+../tests/consistency/test_docstrings.py:11: AssertionError
+----------------------------- Captured stdout call -----------------------------
+Checking ./_TEAM2_speechbrain_gpu_setup_test.py...
+	ERROR: The library ./_TEAM2_speechbrain_gpu_setup_test.py must start with a docstring. Please write it. For more info, see tests/consistency/DOCSTRINGS.md
+_______________________________ test_recipe_list _______________________________
+
+search_folder = 'recipes', hparam_ext = ['.yaml'], hparam_field = 'Hparam_file'
+recipe_folder = 'tests/recipes', flags_field = 'test_debug_flags'
+avoid_list = ['/models/', '/results/', '/pretrained_models/', 'recipes/Voicebank/MTL/CoopNet/hparams/logger.yaml', 'recipes/LibriParty/generate_dataset/dataset.yaml', 'hpopt.yaml', ...]
+
+    def test_recipe_list(
+        search_folder="recipes",
+        hparam_ext=[".yaml"],
+        hparam_field="Hparam_file",
+        recipe_folder="tests/recipes",
+        flags_field="test_debug_flags",
+        avoid_list=[
+            "/models/",
+            "/results/",
+            "/pretrained_models/",
+            "recipes/Voicebank/MTL/CoopNet/hparams/logger.yaml",
+            "recipes/LibriParty/generate_dataset/dataset.yaml",
+            "hpopt.yaml",
+            "recipes/LJSpeech/TTS/quantization/hparams/kmeans.yaml",
+            "recipes/DNS/noisyspeech_synthesizer/noisyspeech_synthesizer.yaml",
+        ],
+    ):
+        """This test checks if all the all hparam file of all the recipes are listed
+        in the csv recipe file.
+    
+        Arguments
+        ---------
+        search_folder: path
+            The path where to search the hparam files.
+        hparam_ext: list
+            The list containing the extensions of hparam files.
+        hparam_field: str
+            Field of the csv file where the path of the hparam file is reported.
+        recipe_folder: path
+            Path of the folder containing csv recipe files.
+        flags_field: str
+            Field of the csv file where the debug flags are stated (for data flow testing).
+        avoid_list: list
+            List of files for which this check must be avoided.
+    
+        Returns
+        ---------
+        bool:
+            True if the test passes, False otherwise.
+    
+        """
+        all_diffs_zero = True
+        all_with_flags = True
+>       for recipe_csvfile in os.listdir(recipe_folder):
+E       FileNotFoundError: [Errno 2] No such file or directory: 'tests/recipes'
+
+../tests/consistency/test_recipe.py:56: FileNotFoundError
+______________________________ test_recipe_files _______________________________
+
+recipe_folder = 'tests/recipes'
+fields = ['Script_file', 'Hparam_file', 'Data_prep_file', 'Readme_file']
+
+    def test_recipe_files(
+        recipe_folder="tests/recipes",
+        fields=["Script_file", "Hparam_file", "Data_prep_file", "Readme_file"],
+    ):
+        """This test checks if the files listed in the recipe csv file exist.
+    
+        Arguments
+        ---------.
+        recipe_folder: path
+            Path of the folder containing csv recipe files.
+        fields: list
+            Fields of the csv recipe file to check.
+    
+        Returns
+        ---------
+        check: bool
+            True if the test passes, False otherwise.
+        """
+        check = True
+        # Loop over all recipe CSVs
+>       for recipe_csvfile in os.listdir(recipe_folder):
+E       FileNotFoundError: [Errno 2] No such file or directory: 'tests/recipes'
+
+../tests/consistency/test_recipe.py:111: FileNotFoundError
+_____________________________ test_mandatory_files _____________________________
+
+recipe_folder = 'tests/recipes'
+must_exist = ['Script_file', 'Hparam_file', 'Readme_file']
+
+    def test_mandatory_files(
+        recipe_folder="tests/recipes",
+        must_exist=["Script_file", "Hparam_file", "Readme_file"],
+    ):
+        """This test checks if all the recipes contain the specified mandatory files.
+    
+        Arguments
+        ---------.
+        recipe_folder: path
+            Path of the folder containing csv recipe files.
+        must_exist: list
+            List of the fields of the csv recipe file that must contain valid paths.
+    
+        Returns
+        ---------
+        check: bool
+            True if the test passes, False otherwise.
+        """
+    
+        check = True
+    
+        # Loop over all recipe CSVs
+>       for recipe_csvfile in os.listdir(recipe_folder):
+E       FileNotFoundError: [Errno 2] No such file or directory: 'tests/recipes'
+
+../tests/consistency/test_recipe.py:154: FileNotFoundError
+______________________________ test_README_links _______________________________
+
+recipe_folder = 'tests/recipes', readme_field = 'Readme_file'
+must_link = ['Result_url', 'HF_repo']
+
+    def test_README_links(
+        recipe_folder="tests/recipes",
+        readme_field="Readme_file",
+        must_link=["Result_url", "HF_repo"],
+    ):
+        """This test checks if the README file contains the correct DropBox and HF repositories.
+    
+        Arguments
+        ---------.
+        recipe_folder: path
+            Path of the folder containing csv recipe files.
+        readme_field: string
+            Field of the csv recipe file that contains the path to the readme file.
+        must_link : list
+            Fields that contains the paths that must be linked in the readme file.
+    
+        Returns
+        ---------
+        check: bool
+            True if the test passes, False otherwise.
+        """
+        check = True
+    
+        # Loop over all recipe CSVs
+>       for recipe_csvfile in os.listdir(recipe_folder):
+E       FileNotFoundError: [Errno 2] No such file or directory: 'tests/recipes'
+
+../tests/consistency/test_recipe.py:196: FileNotFoundError
+_________________________ test_yaml_script_consistency _________________________
+
+recipe_folder = 'tests/recipes'
+
+    def test_yaml_script_consistency(recipe_folder="tests/recipes"):
+        """This test checks the consistency between yaml files (used to specify
+        hyperparameters) and script files (that implement the training recipe).
+    
+        Arguments
+        ---------
+        recipe_folder : path
+            Path of the folder with csv files containing the training scripts with their coupled
+            yaml files (with colums called 'Hparam_file', 'Script_file', 'Data_prep_file')
+        """
+    
+        # Use this list to itemize special yaml for which we do not have to test
+        avoid_check = []
+        check = True
+    
+        # Loop over all recipe CSVs
+>       for recipe_csvfile in os.listdir(recipe_folder):
+E       FileNotFoundError: [Errno 2] No such file or directory: 'tests/recipes'
+
+../tests/consistency/test_yaml.py:28: FileNotFoundError
+_______________________________ test_Leaf[cuda] ________________________________
+
+mod = <torch.ScriptMethod object at 0x7f6e0c482900>
+inputs = (tensor([[0.2385, 0.8550, 0.4700,  ..., 0.6639, 0.2064, 0.9313],
+        [0.2465, 0.3613, 0.4941,  ..., 0.0949, 0.5932....., 0.1941, 0.7543, 0.1685],
+        [0.7965, 0.5488, 0.5334,  ..., 0.7075, 0.6823, 0.8789]],
+       device='cuda:0'),)
+running_what = 'trace'
+
+    def run_mod_and_filter_tensor_outputs(mod, inputs, running_what):
+        try:
+            if isinstance(inputs, dict) and example_inputs_is_kwarg:
+                outs = wrap_retval(mod(**inputs))
+            else:
+>               outs = wrap_retval(mod(*_clone_inputs(inputs)))
+E               RuntimeError: The following operation failed in the TorchScript interpreter.
+E               Traceback of TorchScript (most recent call last):
+E               RuntimeError: default_program(30): error: name followed by "::" must be a class or namespace name
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                         ^
+E               
+E               default_program(30): error: expected an identifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                      ^
+E               
+E               default_program(30): error: invalid combination of type specifiers
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                      ^
+E               
+E               default_program(30): error: too few arguments for class template "TensorInfo"
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                           ^
+E               
+E               default_program(30): error: expected a type specifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                             ^
+E               
+E               default_program(30): error: name followed by "::" must be a class or namespace name
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                     ^
+E               
+E               default_program(30): error: expected an identifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                  ^
+E               
+E               default_program(30): error: invalid combination of type specifiers
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                  ^
+E               
+E               default_program(30): error: too few arguments for class template "TensorInfo"
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                       ^
+E               
+E               default_program(30): error: expected a type specifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                         ^
+E               
+E               default_program(30): error: name followed by "::" must be a class or namespace name
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                 ^
+E               
+E               default_program(30): error: expected an identifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                              ^
+E               
+E               default_program(30): error: invalid combination of type specifiers
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                              ^
+E               
+E               default_program(30): error: too few arguments for class template "TensorInfo"
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                   ^
+E               
+E               default_program(30): error: expected a type specifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                     ^
+E               
+E               default_program(30): error: name followed by "::" must be a class or namespace name
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                                             ^
+E               
+E               default_program(30): error: expected an identifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                                                          ^
+E               
+E               default_program(30): error: invalid combination of type specifiers
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                                                          ^
+E               
+E               default_program(30): error: too few arguments for class template "TensorInfo"
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                                                               ^
+E               
+E               default_program(30): error: expected a type specifier
+E                 void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E                                                                                                                                                                                                                                 ^
+E               
+E               default_program(34): error: name followed by "::" must be a class or namespace name
+E                   c10::complex<float> t0_buf[4];
+E                   ^
+E               
+E               default_program(34): error: expected an identifier
+E                   c10::complex<float> t0_buf[4];
+E                                ^
+E               
+E               default_program(34): error: expected a ";"
+E                   c10::complex<float> t0_buf[4];
+E                                ^
+E               
+E               default_program(36): error: name followed by "::" must be a class or namespace name
+E                   c10::complex<float> t1_buf[4];
+E                   ^
+E               
+E               default_program(36): error: expected an identifier
+E                   c10::complex<float> t1_buf[4];
+E                                ^
+E               
+E               default_program(36): error: expected a ";"
+E                   c10::complex<float> t1_buf[4];
+E                                ^
+E               
+E               default_program(38): error: name followed by "::" must be a class or namespace name
+E                   c10::complex<float> t2_buf[4];
+E                   ^
+E               
+E               default_program(38): error: expected an identifier
+E                   c10::complex<float> t2_buf[4];
+E                                ^
+E               
+E               default_program(38): error: expected a ";"
+E                   c10::complex<float> t2_buf[4];
+E                                ^
+E               
+E               default_program(40): error: name followed by "::" must be a class or namespace name
+E                   c10::complex<float> t3_buf[4];
+E                   ^
+E               
+E               default_program(40): error: expected an identifier
+E                   c10::complex<float> t3_buf[4];
+E                                ^
+E               
+E               default_program(40): error: expected a ";"
+E                   c10::complex<float> t3_buf[4];
+E                                ^
+E               
+E               default_program(58): error: identifier "t1" is undefined
+E                       size_t t1_dimIndex1 = t1_linearIndex % t1.sizes[1];
+E                                                              ^
+E               
+E               default_program(79): error: identifier "t0_buf" is undefined
+E                       for(int i = 0; i<4; i++) t0_buf[i] = t0.data[t0_offset + i];
+E                                                ^
+E               
+E               default_program(79): error: identifier "t0" is undefined
+E                       for(int i = 0; i<4; i++) t0_buf[i] = t0.data[t0_offset + i];
+E                                                            ^
+E               
+E               default_program(80): error: identifier "t1_buf" is undefined
+E                       for(int i = 0; i<4; i++) t1_buf[i] = t1.data[t1_offset + i];
+E                                                ^
+E               
+E               default_program(81): error: identifier "t2_buf" is undefined
+E                       for(int i = 0; i<4; i++) t2_buf[i] = t2.data[t2_offset + i];
+E                                                ^
+E               
+E               default_program(81): error: identifier "t2" is undefined
+E                       for(int i = 0; i<4; i++) t2_buf[i] = t2.data[t2_offset + i];
+E                                                            ^
+E               
+E               default_program(86): error: name followed by "::" must be a class or namespace name
+E                         c10::complex<float> n0 = t0_buf[i];
+E                         ^
+E               
+E               default_program(86): error: expected an identifier
+E                         c10::complex<float> n0 = t0_buf[i];
+E                                      ^
+E               
+E               default_program(86): error: expected a ";"
+E                         c10::complex<float> n0 = t0_buf[i];
+E                                      ^
+E               
+E               default_program(87): error: name followed by "::" must be a class or namespace name
+E                         c10::complex<float> n1 = t1_buf[i];
+E                         ^
+E               
+E               default_program(87): error: expected an identifier
+E                         c10::complex<float> n1 = t1_buf[i];
+E                                      ^
+E               
+E               default_program(87): error: expected a ";"
+E                         c10::complex<float> n1 = t1_buf[i];
+E                                      ^
+E               
+E               default_program(88): error: name followed by "::" must be a class or namespace name
+E                         c10::complex<float> n2 = t2_buf[i];
+E                         ^
+E               
+E               default_program(88): error: expected an identifier
+E                         c10::complex<float> n2 = t2_buf[i];
+E                                      ^
+E               
+E               default_program(88): error: expected a ";"
+E                         c10::complex<float> n2 = t2_buf[i];
+E                                      ^
+E               
+E               default_program(89): error: name followed by "::" must be a class or namespace name
+E                         c10::complex<float> n3 = n1 * n2;
+E                         ^
+E               
+E               default_program(89): error: expected an identifier
+E                         c10::complex<float> n3 = n1 * n2;
+E                                      ^
+E               
+E               default_program(89): error: expected a ";"
+E                         c10::complex<float> n3 = n1 * n2;
+E                                      ^
+E               
+E               default_program(90): error: name followed by "::" must be a class or namespace name
+E                         c10::complex<float> n4 = n3 * n0;
+E                         ^
+E               
+E               default_program(90): error: expected an identifier
+E                         c10::complex<float> n4 = n3 * n0;
+E                                      ^
+E               
+E               default_program(90): error: expected a ";"
+E                         c10::complex<float> n4 = n3 * n0;
+E                                      ^
+E               
+E               default_program(91): error: identifier "t3_buf" is undefined
+E                         t3_buf[i] = n4;
+E                         ^
+E               
+E               default_program(91): error: identifier "n4" is undefined
+E                         t3_buf[i] = n4;
+E                                     ^
+E               
+E               default_program(95): error: identifier "t3" is undefined
+E                       for(int i = 0; i<4; i++) t3.data[t3_offset + i] = t3_buf[i];
+E                                                ^
+E               
+E               default_program(95): error: identifier "t3_buf" is undefined
+E                       for(int i = 0; i<4; i++) t3.data[t3_offset + i] = t3_buf[i];
+E                                                                         ^
+E               
+E               default_program(113): error: identifier "t1" is undefined
+E                       size_t t1_dimIndex1 = t1_linearIndex % t1.sizes[1];
+E                                                              ^
+E               
+E               default_program(134): error: name followed by "::" must be a class or namespace name
+E                       c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E                       ^
+E               
+E               default_program(134): error: expected an identifier
+E                       c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E                                    ^
+E               
+E               default_program(134): error: expected a ";"
+E                       c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E                                    ^
+E               
+E               default_program(135): error: name followed by "::" must be a class or namespace name
+E                       c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E                       ^
+E               
+E               default_program(135): error: expected an identifier
+E                       c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E                                    ^
+E               
+E               default_program(135): error: expected a ";"
+E                       c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E                                    ^
+E               
+E               default_program(136): error: name followed by "::" must be a class or namespace name
+E                       c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E                       ^
+E               
+E               default_program(136): error: expected an identifier
+E                       c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E                                    ^
+E               
+E               default_program(136): error: expected a ";"
+E                       c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E                                    ^
+E               
+E               default_program(137): error: name followed by "::" must be a class or namespace name
+E                       c10::complex<float> n3 = n1 * n2;
+E                       ^
+E               
+E               default_program(137): error: expected an identifier
+E                       c10::complex<float> n3 = n1 * n2;
+E                                    ^
+E               
+E               default_program(137): error: expected a ";"
+E                       c10::complex<float> n3 = n1 * n2;
+E                                    ^
+E               
+E               default_program(138): error: name followed by "::" must be a class or namespace name
+E                       c10::complex<float> n4 = n3 * n0;
+E                       ^
+E               
+E               default_program(138): error: expected an identifier
+E                       c10::complex<float> n4 = n3 * n0;
+E                                    ^
+E               
+E               default_program(138): error: expected a ";"
+E                       c10::complex<float> n4 = n3 * n0;
+E                                    ^
+E               
+E               default_program(139): error: identifier "t3" is undefined
+E                       t3.data[t3_offset] = n4;
+E                       ^
+E               
+E               default_program(139): error: identifier "n4" is undefined
+E                       t3.data[t3_offset] = n4;
+E                                            ^
+E               
+E               75 errors detected in the compilation of "default_program".
+
+../../../.local/lib/python3.9/site-packages/torch/jit/_trace.py:470: RuntimeError
+
+The above exception was the direct cause of the following exception:
+
+device = 'cuda'
+
+    def test_Leaf(device):
+        from speechbrain.lobes.features import Leaf
+    
+        input = torch.rand([4, 16000], device=device)
+        convolve = Leaf(
+            input_shape=input.shape,
+            window_len=25.0,
+            window_stride=10.0,
+            out_channels=8,
+        ).to(device)
+        output = convolve(input)
+        assert output.shape[-1] == 8
+>       assert torch.jit.trace(convolve, input)
+
+../tests/unittests/test_CNN.py:103: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../.local/lib/python3.9/site-packages/torch/jit/_trace.py:798: in trace
+    return trace_module(
+../../../.local/lib/python3.9/site-packages/torch/jit/_trace.py:1093: in trace_module
+    _check_trace(
+../../../.local/lib/python3.9/site-packages/torch/utils/_contextlib.py:115: in decorate_context
+    return func(*args, **kwargs)
+../../../.local/lib/python3.9/site-packages/torch/jit/_trace.py:561: in _check_trace
+    traced_outs = run_mod_and_filter_tensor_outputs(traced_func, inputs, "trace")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mod = <torch.ScriptMethod object at 0x7f6e0c482900>
+inputs = (tensor([[0.2385, 0.8550, 0.4700,  ..., 0.6639, 0.2064, 0.9313],
+        [0.2465, 0.3613, 0.4941,  ..., 0.0949, 0.5932....., 0.1941, 0.7543, 0.1685],
+        [0.7965, 0.5488, 0.5334,  ..., 0.7075, 0.6823, 0.8789]],
+       device='cuda:0'),)
+running_what = 'trace'
+
+    def run_mod_and_filter_tensor_outputs(mod, inputs, running_what):
+        try:
+            if isinstance(inputs, dict) and example_inputs_is_kwarg:
+                outs = wrap_retval(mod(**inputs))
+            else:
+                outs = wrap_retval(mod(*_clone_inputs(inputs)))
+            outs = [out for out in outs if isinstance(out, torch.Tensor)]
+            return outs
+        except Exception as e:
+            graph_diff_errors, tensor_compare_errors = graph_diagnostic_info()
+            msg = f"encountered an exception while running the {running_what} with test inputs.\nException:\n{indent(str(e))}"
+>           raise TracingCheckError(
+                graph_diff_errors,
+                tensor_compare_errors,
+                extra_msg=msg,
+            ) from e
+E           torch.jit._trace.TracingCheckError: Tracing failed sanity checks!
+E           encountered an exception while running the trace with test inputs.
+E           Exception:
+E           	The following operation failed in the TorchScript interpreter.
+E           	Traceback of TorchScript (most recent call last):
+E           	RuntimeError: default_program(30): error: name followed by "::" must be a class or namespace name
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                          ^
+E           	
+E           	default_program(30): error: expected an identifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                       ^
+E           	
+E           	default_program(30): error: invalid combination of type specifiers
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                       ^
+E           	
+E           	default_program(30): error: too few arguments for class template "TensorInfo"
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                            ^
+E           	
+E           	default_program(30): error: expected a type specifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                              ^
+E           	
+E           	default_program(30): error: name followed by "::" must be a class or namespace name
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                      ^
+E           	
+E           	default_program(30): error: expected an identifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                   ^
+E           	
+E           	default_program(30): error: invalid combination of type specifiers
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                   ^
+E           	
+E           	default_program(30): error: too few arguments for class template "TensorInfo"
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                        ^
+E           	
+E           	default_program(30): error: expected a type specifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                          ^
+E           	
+E           	default_program(30): error: name followed by "::" must be a class or namespace name
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                  ^
+E           	
+E           	default_program(30): error: expected an identifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                               ^
+E           	
+E           	default_program(30): error: invalid combination of type specifiers
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                               ^
+E           	
+E           	default_program(30): error: too few arguments for class template "TensorInfo"
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                    ^
+E           	
+E           	default_program(30): error: expected a type specifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                      ^
+E           	
+E           	default_program(30): error: name followed by "::" must be a class or namespace name
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                                              ^
+E           	
+E           	default_program(30): error: expected an identifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                                                           ^
+E           	
+E           	default_program(30): error: invalid combination of type specifiers
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                                                           ^
+E           	
+E           	default_program(30): error: too few arguments for class template "TensorInfo"
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                                                                ^
+E           	
+E           	default_program(30): error: expected a type specifier
+E           	  void kernel_4(IndexType totalElements, const TensorInfo<c10::complex<float>,1> t0, const TensorInfo<c10::complex<float>,2> t1, const TensorInfo<c10::complex<float>,1> t2, const TensorInfo<c10::complex<float>,1> t3 ) {
+E           	                                                                                                                                                                                                                  ^
+E           	
+E           	default_program(34): error: name followed by "::" must be a class or namespace name
+E           	    c10::complex<float> t0_buf[4];
+E           	    ^
+E           	
+E           	default_program(34): error: expected an identifier
+E           	    c10::complex<float> t0_buf[4];
+E           	                 ^
+E           	
+E           	default_program(34): error: expected a ";"
+E           	    c10::complex<float> t0_buf[4];
+E           	                 ^
+E           	
+E           	default_program(36): error: name followed by "::" must be a class or namespace name
+E           	    c10::complex<float> t1_buf[4];
+E           	    ^
+E           	
+E           	default_program(36): error: expected an identifier
+E           	    c10::complex<float> t1_buf[4];
+E           	                 ^
+E           	
+E           	default_program(36): error: expected a ";"
+E           	    c10::complex<float> t1_buf[4];
+E           	                 ^
+E           	
+E           	default_program(38): error: name followed by "::" must be a class or namespace name
+E           	    c10::complex<float> t2_buf[4];
+E           	    ^
+E           	
+E           	default_program(38): error: expected an identifier
+E           	    c10::complex<float> t2_buf[4];
+E           	                 ^
+E           	
+E           	default_program(38): error: expected a ";"
+E           	    c10::complex<float> t2_buf[4];
+E           	                 ^
+E           	
+E           	default_program(40): error: name followed by "::" must be a class or namespace name
+E           	    c10::complex<float> t3_buf[4];
+E           	    ^
+E           	
+E           	default_program(40): error: expected an identifier
+E           	    c10::complex<float> t3_buf[4];
+E           	                 ^
+E           	
+E           	default_program(40): error: expected a ";"
+E           	    c10::complex<float> t3_buf[4];
+E           	                 ^
+E           	
+E           	default_program(58): error: identifier "t1" is undefined
+E           	        size_t t1_dimIndex1 = t1_linearIndex % t1.sizes[1];
+E           	                                               ^
+E           	
+E           	default_program(79): error: identifier "t0_buf" is undefined
+E           	        for(int i = 0; i<4; i++) t0_buf[i] = t0.data[t0_offset + i];
+E           	                                 ^
+E           	
+E           	default_program(79): error: identifier "t0" is undefined
+E           	        for(int i = 0; i<4; i++) t0_buf[i] = t0.data[t0_offset + i];
+E           	                                             ^
+E           	
+E           	default_program(80): error: identifier "t1_buf" is undefined
+E           	        for(int i = 0; i<4; i++) t1_buf[i] = t1.data[t1_offset + i];
+E           	                                 ^
+E           	
+E           	default_program(81): error: identifier "t2_buf" is undefined
+E           	        for(int i = 0; i<4; i++) t2_buf[i] = t2.data[t2_offset + i];
+E           	                                 ^
+E           	
+E           	default_program(81): error: identifier "t2" is undefined
+E           	        for(int i = 0; i<4; i++) t2_buf[i] = t2.data[t2_offset + i];
+E           	                                             ^
+E           	
+E           	default_program(86): error: name followed by "::" must be a class or namespace name
+E           	          c10::complex<float> n0 = t0_buf[i];
+E           	          ^
+E           	
+E           	default_program(86): error: expected an identifier
+E           	          c10::complex<float> n0 = t0_buf[i];
+E           	                       ^
+E           	
+E           	default_program(86): error: expected a ";"
+E           	          c10::complex<float> n0 = t0_buf[i];
+E           	                       ^
+E           	
+E           	default_program(87): error: name followed by "::" must be a class or namespace name
+E           	          c10::complex<float> n1 = t1_buf[i];
+E           	          ^
+E           	
+E           	default_program(87): error: expected an identifier
+E           	          c10::complex<float> n1 = t1_buf[i];
+E           	                       ^
+E           	
+E           	default_program(87): error: expected a ";"
+E           	          c10::complex<float> n1 = t1_buf[i];
+E           	                       ^
+E           	
+E           	default_program(88): error: name followed by "::" must be a class or namespace name
+E           	          c10::complex<float> n2 = t2_buf[i];
+E           	          ^
+E           	
+E           	default_program(88): error: expected an identifier
+E           	          c10::complex<float> n2 = t2_buf[i];
+E           	                       ^
+E           	
+E           	default_program(88): error: expected a ";"
+E           	          c10::complex<float> n2 = t2_buf[i];
+E           	                       ^
+E           	
+E           	default_program(89): error: name followed by "::" must be a class or namespace name
+E           	          c10::complex<float> n3 = n1 * n2;
+E           	          ^
+E           	
+E           	default_program(89): error: expected an identifier
+E           	          c10::complex<float> n3 = n1 * n2;
+E           	                       ^
+E           	
+E           	default_program(89): error: expected a ";"
+E           	          c10::complex<float> n3 = n1 * n2;
+E           	                       ^
+E           	
+E           	default_program(90): error: name followed by "::" must be a class or namespace name
+E           	          c10::complex<float> n4 = n3 * n0;
+E           	          ^
+E           	
+E           	default_program(90): error: expected an identifier
+E           	          c10::complex<float> n4 = n3 * n0;
+E           	                       ^
+E           	
+E           	default_program(90): error: expected a ";"
+E           	          c10::complex<float> n4 = n3 * n0;
+E           	                       ^
+E           	
+E           	default_program(91): error: identifier "t3_buf" is undefined
+E           	          t3_buf[i] = n4;
+E           	          ^
+E           	
+E           	default_program(91): error: identifier "n4" is undefined
+E           	          t3_buf[i] = n4;
+E           	                      ^
+E           	
+E           	default_program(95): error: identifier "t3" is undefined
+E           	        for(int i = 0; i<4; i++) t3.data[t3_offset + i] = t3_buf[i];
+E           	                                 ^
+E           	
+E           	default_program(95): error: identifier "t3_buf" is undefined
+E           	        for(int i = 0; i<4; i++) t3.data[t3_offset + i] = t3_buf[i];
+E           	                                                          ^
+E           	
+E           	default_program(113): error: identifier "t1" is undefined
+E           	        size_t t1_dimIndex1 = t1_linearIndex % t1.sizes[1];
+E           	                                               ^
+E           	
+E           	default_program(134): error: name followed by "::" must be a class or namespace name
+E           	        c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E           	        ^
+E           	
+E           	default_program(134): error: expected an identifier
+E           	        c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E           	                     ^
+E           	
+E           	default_program(134): error: expected a ";"
+E           	        c10::complex<float> n0 = __ldg(&t0.data[t0_offset]);
+E           	                     ^
+E           	
+E           	default_program(135): error: name followed by "::" must be a class or namespace name
+E           	        c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E           	        ^
+E           	
+E           	default_program(135): error: expected an identifier
+E           	        c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E           	                     ^
+E           	
+E           	default_program(135): error: expected a ";"
+E           	        c10::complex<float> n1 = __ldg(&t1.data[t1_offset]);
+E           	                     ^
+E           	
+E           	default_program(136): error: name followed by "::" must be a class or namespace name
+E           	        c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E           	        ^
+E           	
+E           	default_program(136): error: expected an identifier
+E           	        c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E           	                     ^
+E           	
+E           	default_program(136): error: expected a ";"
+E           	        c10::complex<float> n2 = __ldg(&t2.data[t2_offset]);
+E           	                     ^
+E           	
+E           	default_program(137): error: name followed by "::" must be a class or namespace name
+E           	        c10::complex<float> n3 = n1 * n2;
+E           	        ^
+E           	
+E           	default_program(137): error: expected an identifier
+E           	        c10::complex<float> n3 = n1 * n2;
+E           	                     ^
+E           	
+E           	default_program(137): error: expected a ";"
+E           	        c10::complex<float> n3 = n1 * n2;
+E           	                     ^
+E           	
+E           	default_program(138): error: name followed by "::" must be a class or namespace name
+E           	        c10::complex<float> n4 = n3 * n0;
+E           	        ^
+E           	
+E           	default_program(138): error: expected an identifier
+E           	        c10::complex<float> n4 = n3 * n0;
+E           	                     ^
+E           	
+E           	default_program(138): error: expected a ";"
+E           	        c10::complex<float> n4 = n3 * n0;
+E           	                     ^
+E           	
+E           	default_program(139): error: identifier "t3" is undefined
+E           	        t3.data[t3_offset] = n4;
+E           	        ^
+E           	
+E           	default_program(139): error: identifier "n4" is undefined
+E           	        t3.data[t3_offset] = n4;
+E           	                             ^
+E           	
+E           	75 errors detected in the compilation of "default_program".
+
+../../../.local/lib/python3.9/site-packages/torch/jit/_trace.py:476: TracingCheckError
+_______________________________ test_clip[cuda] ________________________________
+
+device = 'cuda'
+
+    def test_clip(device):
+        from speechbrain.processing.speech_augmentation import DoClip
+    
+        test_waveform = torch.sin(torch.arange(16000.0, device=device)).unsqueeze(0)
+    
+        # Edge cases
+        no_clip = DoClip(clip_prob=0.0).to(device)
+        assert no_clip(test_waveform).allclose(test_waveform)
+        no_clip = DoClip(clip_low=1, clip_high=1).to(device)
+>       assert no_clip(test_waveform).allclose(test_waveform)
+
+../tests/unittests/test_augment.py:222: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../../../.local/lib/python3.9/site-packages/torch/nn/modules/module.py:1518: in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+../../../.local/lib/python3.9/site-packages/torch/nn/modules/module.py:1527: in _call_impl
+    return forward_call(*args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = DoClip()
+waveforms = tensor([[0.0000, 0.8415, 0.9093,  ..., 0.0102, 0.8469, 0.9050]],
+       device='cuda:0')
+
+    def forward(self, waveforms):
+        """
+        Arguments
+        ---------
+        waveforms : tensor
+            Shape should be `[batch, time]` or `[batch, time, channels]`.
+    
+        Returns
+        -------
+        Tensor of shape `[batch, time]` or `[batch, time, channels]`
+        """
+    
+        # Don't clip (return early) 1-`clip_prob` portion of the batches
+        if torch.rand(1) > self.clip_prob:
+            return waveforms.clone()
+    
+        # Randomly select clip value
+        clipping_range = self.clip_high - self.clip_low
+        clip_value = torch.rand(1)[0] * clipping_range + self.clip_low
+    
+        # Apply clipping
+>       clipped_waveform = waveforms.clamp(-clip_value, clip_value)
+E       RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument min in method wrapper_CUDA_clamp_Tensor)
+
+../speechbrain/processing/speech_augmentation.py:1430: RuntimeError
+________________________________ test_tokenizer ________________________________
+
+    def test_tokenizer():
+        from speechbrain.tokenizers.SentencePiece import SentencePiece
+    
+        gt = [
+            ["HELLO", "MORNING", "MORNING", "HELLO"],
+            ["HELLO", "MORNING", "HELLO"],
+        ]
+    
+        # Word-level input test
+        dict_int2lab = {1: "HELLO", 2: "MORNING"}
+    
+>       spm = SentencePiece(
+            os.path.abspath("tests/tmp/tokenizer_data"),
+            100,
+            annotation_train=os.path.abspath(
+                "tests/samples/annotation/tokenizer.csv"
+            ),
+            annotation_read="wrd",
+            model_type="bpe",
+        )
+
+../tests/unittests/test_tokenizer.py:16: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../speechbrain/tokenizers/SentencePiece.py:172: in __init__
+    run_on_main(self._csv2text)
+../speechbrain/utils/distributed.py:60: in run_on_main
+    main_process_only(func)(*args, **kwargs)
+../speechbrain/utils/distributed.py:102: in main_proc_wrapped_func
+    result = function(*args, **kwargs)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <speechbrain.tokenizers.SentencePiece.SentencePiece object at 0x7f6d58c60af0>
+
+    def _csv2text(self):
+        """Read CSV file and convert specific data entries into text file.
+        """
+        if not os.path.isfile(os.path.abspath(self.annotation_train)):
+>           raise ValueError(
+                self.annotation_train
+                + " is not a file. please provide annotation file for training."
+            )
+E           ValueError: /users/acp23jlc/miniproject/speechbrain/TEAM2_modifications/tests/samples/annotation/tokenizer.csv is not a file. please provide annotation file for training.
+
+../speechbrain/tokenizers/SentencePiece.py:201: ValueError
+=============================== warnings summary ===============================
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/nnet/CNN.py:1304: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    2.0 * torch.log(torch.tensor(2.0, device=kernel_data.device))
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/nnet/CNN.py:1311: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    2.0 * torch.log(torch.tensor(2.0, device=kernel_data.device))
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/processing/signal_processing.py:581: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    denominator = 1.0 / (torch.sqrt(torch.tensor(2.0) * math.pi) * fwhm)
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/processing/signal_processing.py:592: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    torch.complex(torch.tensor(0.0), torch.tensor(1.0))
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/lobes/features.py:411: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    outputs, torch.tensor(1e-5, device=outputs.device)
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/nnet/normalization.py:604: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    self.alpha, torch.tensor(1.0, dtype=x.dtype, device=x.device)
+
+tests/unittests/test_CNN.py::test_Leaf[cuda]
+  /users/acp23jlc/miniproject/speechbrain/speechbrain/nnet/normalization.py:607: TracerWarning: torch.tensor results are registered as constants in the trace. You can safely ignore this warning if you use this function to create tensors out of constant variables that would be the same every time you call this function. In any other case, this might cause the trace to be incorrect.
+    self.root, torch.tensor(1.0, dtype=x.dtype, device=x.device)
+
+tests/unittests/test_RNN.py::test_RNN[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/modules/rnn.py:235: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if self.input_size != input.size(-1):
+
+tests/unittests/test_RNN.py::test_RNN[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/modules/rnn.py:255: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if hx.size() != expected_hidden_size:
+
+tests/unittests/test_dataloader.py::test_saveable_dataloader_multiprocess
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/utils/data/dataloader.py:557: UserWarning: This DataLoader will create 2 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+    warnings.warn(_create_warning_msg(
+
+tests/unittests/test_dataloader.py::test_saveable_dataloader_multiprocess
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/utils/data/dataloader.py:557: UserWarning: This DataLoader will create 3 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+    warnings.warn(_create_warning_msg(
+
+tests/unittests/test_dataloader.py::test_saveable_dataloader_multiprocess
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/utils/data/dataloader.py:557: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 1, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+    warnings.warn(_create_warning_msg(
+
+tests/unittests/test_dropout.py::test_dropout[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/functional.py:1352: UserWarning: dropout2d: Received a 3D input to dropout2d and assuming that channel-wise 1D dropout behavior is desired - input is interpreted as shape (N, C, L), where C is the channel dim. This behavior will change in a future release to interpret the input as one without a batch dimension, i.e. shape (C, H, W). To maintain the 1D channel-wise dropout behavior, please switch to using dropout1d instead.
+    warnings.warn("dropout2d: Received a 3D input to dropout2d and assuming that channel-wise "
+
+tests/unittests/test_losses.py::test_guided_attention_loss_mask[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/functional.py:504: UserWarning: torch.meshgrid: in an upcoming release, it will be required to pass the indexing argument. (Triggered internally at ../aten/src/ATen/native/TensorShape.cpp:3526.)
+    return _VF.meshgrid(tensors, **kwargs)  # type: ignore[attr-defined]
+
+tests/unittests/test_normalization.py::test_BatchNorm1d[cuda]
+tests/unittests/test_normalization.py::test_BatchNorm2d[cuda]
+tests/unittests/test_normalization.py::test_GroupNorm[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/functional.py:2443: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if size_prods == 1:
+
+tests/unittests/test_normalization.py::test_InstanceNorm1d[cuda]
+tests/unittests/test_normalization.py::test_InstanceNorm2d[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/modules/instancenorm.py:74: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if input.size(feature_dim) != self.num_features:
+
+tests/unittests/test_normalization.py::test_InstanceNorm1d[cuda]
+tests/unittests/test_normalization.py::test_InstanceNorm2d[cuda]
+  /users/acp23jlc/.local/lib/python3.9/site-packages/torch/nn/functional.py:2488: TracerWarning: Converting a tensor to a Python boolean might cause the trace to be incorrect. We can't record the data flow of Python values, so this value will be treated as a constant in the future. This means that the trace might not generalize to other inputs!
+    if size_prods == 1:
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../tests/consistency/test_docstrings.py::test_recipe_list - AssertionE...
+FAILED ../tests/consistency/test_recipe.py::test_recipe_list - FileNotFoundEr...
+FAILED ../tests/consistency/test_recipe.py::test_recipe_files - FileNotFoundE...
+FAILED ../tests/consistency/test_recipe.py::test_mandatory_files - FileNotFou...
+FAILED ../tests/consistency/test_recipe.py::test_README_links - FileNotFoundE...
+FAILED ../tests/consistency/test_yaml.py::test_yaml_script_consistency - File...
+FAILED ../tests/unittests/test_CNN.py::test_Leaf[cuda] - torch.jit._trace.Tra...
+FAILED ../tests/unittests/test_augment.py::test_clip[cuda] - RuntimeError: Ex...
+FAILED ../tests/unittests/test_tokenizer.py::test_tokenizer - ValueError: /us...
+====== 9 failed, 141 passed, 2 skipped, 21 warnings in 216.97s (0:03:36) =======
