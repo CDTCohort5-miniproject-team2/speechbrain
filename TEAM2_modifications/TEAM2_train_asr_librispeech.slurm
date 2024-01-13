@@ -2,11 +2,11 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:2
+#SBATCH --gres=gpu:4
 #SBATCH --mem=32G
 #SBATCH --output=train_asr-%j.out
 
 module load Anaconda3/2022.10
 source activate speechbrain_venv
 
-python ../recipes/LibriSpeech/ASR/transformer/TEAM2_train_with_whisper.py ../recipes/LibriSpeech/ASR/transformer/hparams/TEAM2_train_hf_whisper.yaml
+python ../recipes/LibriSpeech/ASR/transformer/TEAM2_train_with_whisper.py ../recipes/LibriSpeech/ASR/transformer/hparams/TEAM2_train_hf_whisper.yaml --test_only
