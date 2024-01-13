@@ -90,14 +90,15 @@ class ASR(sb.Brain):
 
             # TODO: TEAM2 - TBC if we need to apply extra step (make sure all lowercase) to get accurate WER -
             #  issue raised in https://discuss.huggingface.co/t/whisper-fine-tuning-on-librispeech-makes-wer-worse/43418/5
+            # TEAM2 - added lower() to check if this changes WER
             if hasattr(self.hparams, "normalized_transcripts"):
                 predicted_words = [
-                    self.tokenizer._normalize(text).split(" ")
+                    self.tokenizer._normalize(text).lower().split(" ")
                     for text in predicted_words
                 ]
 
                 target_words = [
-                    self.tokenizer._normalize(text).split(" ")
+                    self.tokenizer._normalize(text).lower().split(" ")
                     for text in target_words
                 ]
             else:

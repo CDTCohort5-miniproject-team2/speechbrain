@@ -5,14 +5,16 @@
 # ################################
 
 # Seed needs to be set at top of yaml, before objects with parameters are made
-seed: 2024
+seed: 2025
 __set_seed: !apply:torch.manual_seed [!ref <seed>]
-output_folder: !ref results/train_whisper_tiny_en/<seed>
+output_folder: !ref results/train_whisper_tiny_en/<seed>  # TEAM2 - FYI - need to change output folder/seed everytime whisper is run
 output_wer_folder: !ref <output_folder>/
 save_folder: !ref <output_folder>/save
 train_log: !ref <output_folder>/train_log.txt
 
 # URL for the biggest Fairseq english whisper model.
+# TEAM2 - link below for ref, if we want to host our own fine-tuned checkpoint on huggingface
+# https://github.com/huggingface/transformers/blob/main/src/transformers/models/whisper/convert_openai_to_hf.py
 whisper_hub: openai/whisper-tiny.en # TODO: TEAM2 - confirm which model to use
 whisper_folder: !ref <save_folder>/whisper_checkpoint
 language: english
