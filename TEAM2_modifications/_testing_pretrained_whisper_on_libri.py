@@ -5,7 +5,8 @@ from transformers import WhisperForConditionalGeneration, WhisperProcessor
 import torch
 from evaluate import load
 
-librispeech_test_clean = load_dataset("librispeech_asr", "clean", split="test")
+# TEAM2: this takes up too much memory in home space, to implement workaround
+# librispeech_test_clean = load_dataset("librispeech_asr", "clean", split="test")
 
 processor = WhisperProcessor.from_pretrained("openai/whisper-tiny.en")
 model = WhisperForConditionalGeneration.from_pretrained("openai/whisper-tiny.en").to("cuda")
