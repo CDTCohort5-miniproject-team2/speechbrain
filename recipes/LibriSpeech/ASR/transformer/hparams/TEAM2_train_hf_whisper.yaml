@@ -5,7 +5,7 @@
 # ################################
 
 # Seed needs to be set at top of yaml, before objects with parameters are made
-seed: 2027
+seed: 2028
 __set_seed: !apply:torch.manual_seed [!ref <seed>]
 output_folder: !ref results/train_whisper_tiny_en/<seed>  # TEAM2 - FYI - need to change output folder/seed everytime whisper is run
 output_wer_folder: !ref <output_folder>/
