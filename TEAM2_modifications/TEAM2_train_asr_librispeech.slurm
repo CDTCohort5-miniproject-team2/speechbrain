@@ -2,7 +2,7 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
-#SBATCH --gres=gpu:4
+#SBATCH --gres=gpu:2
 #SBATCH --mem=32G
 #SBATCH --output=train_asr-%j.out
 
