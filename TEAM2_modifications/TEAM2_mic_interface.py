@@ -6,6 +6,10 @@ import time
 from datetime import datetime
 import scipy
 
+# TODO: check whether this mic interface can run fine with multiple channels - for parsing wall mics
+#  - TBC we might need to change the code depending on whether we do acoustic cancellation echo
+
+
 class MicListener:
     def __init__(self, sampling_rate=16000, n_channels=1, callback_chunk=512,
                  max_buffer_dur=10.0, vad_threshold=0.5, await_silence_dur=3.0):
@@ -33,7 +37,7 @@ class MicListener:
         (self.get_speech_timestamps, self.save_audio, self.read_audio, self.VADIterator, self.collect_chunks) = vad_utils
 
     def transcribe(self, wavfile):
-        # TODO: implement transcription method here
+        # TODO: Paul and Yao: as discussed - this function is where you implement sending the file to hpc
         transcribed_text = ""
         return transcribed_text
 
