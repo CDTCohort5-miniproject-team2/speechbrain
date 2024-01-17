@@ -125,12 +125,13 @@ class KrotoData:
         else:
             fpath = self.raw_audio_dir/self.audio_catalogue[audio_idx].name
         print(f"Getting demo audio from {fpath.stem}")
-        demo_array, src_sr = librosa.load(fpath, sr=None, mono=False)
+        demo_array, sr = librosa.load(fpath, sr=None, mono=False)
 
-        if downsampled and (src_sr != self.target_sr):
-            demo_array = librosa.resample(demo_array, orig_sr=src_sr, target_sr=self.target_sr)
-
-        return get_audio_array_timeslice(demo_array, start_time=timeslice[0], end_time=timeslice[1], sr=int(src_sr))
+        if downsampled and (sr != self.target_sr):
+            demo_array = librosa.resample(demo_array, orig_sr=sr, target_sr=self.target_sr)
+            sr = self.target.sr
+        
+        return get_audio_array_timeslice(demo_array, start_time=timeslice[0], end_time=timeslice[1], sr=int(sr))
 
     def separate_channels_and_save_audio(self, downsampling=True):
         """
