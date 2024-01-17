@@ -70,6 +70,9 @@ def get_audio_array_timeslice(audio_array, start_time, end_time, sr=16000):
     # TEAM2 fyi: "..." in slicing numpy arrays allows it to accept arrays of an arbitrary number of dimensions
     return audio_array[..., start_sample:end_sample]
 
+def cut_long_audio_files(dirpath, n_seconds=20.0):
+    # TODO
+    pass
 
 class KrotoData:
     def __init__(self, dirpath_str, target_sr=16000):
