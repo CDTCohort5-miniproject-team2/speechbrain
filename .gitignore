@@ -164,3 +164,4 @@ dmypy.json
 recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset/
 miniproject_demo_data/
 TEAM2_modifications/test_audio_files/
+TEAM2_modifications/test_kroto_data/
