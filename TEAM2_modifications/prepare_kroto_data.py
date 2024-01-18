@@ -2,6 +2,8 @@ import librosa
 import pandas as pd
 from pathlib import Path
 import scipy
+from scipy import io  # added during debugging
+import scipy.io.wavfile  #  added during debugging
 import os
 import numpy as np
 import sounddevice as sd
@@ -129,7 +131,7 @@ class KrotoData:
 
         if downsampled and (sr != self.target_sr):
             demo_array = librosa.resample(demo_array, orig_sr=sr, target_sr=self.target_sr)
-            sr = self.target.sr
+            sr = self.target_sr
         
         return get_audio_array_timeslice(demo_array, start_time=timeslice[0], end_time=timeslice[1], sr=int(sr))
 
