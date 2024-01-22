@@ -9,4 +9,4 @@
 module load Anaconda3/2022.10
 source activate speechbrain_venv
 
-python ../recipes/LibriSpeech/ASR/transformer/TEAM2_train_with_whisper.py ../recipes/LibriSpeech/ASR/transformer/hparams/TEAM2_train_hf_whisper.yaml --test_only
+python ../../recipes/LibriSpeech/ASR/transformer/TEAM2_train_with_whisper.py ../../recipes/LibriSpeech/ASR/transformer/hparams/TEAM2_train_hf_whisper.yaml --test_only

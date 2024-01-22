@@ -3,12 +3,10 @@
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:2
-#SBATCH --mem=80G
+#SBATCH --mem=32G
+#SBATCH --output=testing_pretrained-%j.out
 
 module load Anaconda3/2022.10
-module list
 source activate speechbrain_venv
 
-python _TEAM2_speechbrain_gpu_setup_test.py
-
-pytest ../tests --device='cuda'
+python ../_testing_pretrained_whisper_on_libri.py
