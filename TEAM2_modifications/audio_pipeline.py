@@ -94,10 +94,6 @@ def initialise_enhancing():
     print("Enhancer model initialised.")
     return model
 
-def initialise_asr():
-    pass
-
-
 def do_enhancing(audio_array_1d, model, normalise=True):
     audio_tensor = torch.FloatTensor(audio_array_1d).unsqueeze(0)
     # audio_tensor has size (1, n_samples)
@@ -111,16 +107,21 @@ def do_enhancing(audio_array_1d, model, normalise=True):
         enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
     return enhanced_array
 
+def initialise_asr():
+    pass
+
 def do_asr(audio_array_1d):
     pass
 
 def first_beamforming_then_aec():
+    # TODO
     # First beamforming
 
     # Then AEC
     pass
 
 def first_aec_then_beamforming():
+    # TODO
     # First break apart the wall_mic_array into single channels
 
     # Then run AEC on each of these
