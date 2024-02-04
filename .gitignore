@@ -165,6 +165,7 @@ recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset/
 miniproject_demo_data/
 TEAM2_modifications/test_audio_files/
 TEAM2_modifications/test_kroto_data/
+TEAM2_modifications/audio_pipeline_pretrained_models/
 
 # AEC
 DTLN-aec-main/test_audio_files/

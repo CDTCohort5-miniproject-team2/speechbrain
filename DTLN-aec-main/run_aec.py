@@ -14,21 +14,138 @@ Author: Nils L. Westhausen (nils.westhausen@uol.de)
 Version: 27.10.2020
 
 This code is licensed under the terms of the MIT-license.
+
+TEAM2 notes: this is being supplemented to operate on audio arrays (or tensors - TBC) directly rather than on files - the new
+functions created (adapting from the existing code) are initialise_interpreters() and process_audio().
 """
 
 import soundfile as sf
 import numpy as np
 import os
+
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "1"
+# TEAM2: this was added to suppress the following warning:
+# I tensorflow/core/platform/cpu_feature_guard.cc:182] This TensorFlow binary is optimized to use available CPU instructions
+# in performance-critical operations.
+# To enable the following instructions: AVX2 AVX512F AVX512_VNNI FMA, in other operations, rebuild TensorFlow with the
+# appropriate compiler flags.
+
 import argparse
 import tensorflow.lite as tflite
 
 # make GPUs invisible
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
+def initialise_interpreters(model):
+    # before using process_audio
+    interpreter_1 = tflite.Interpreter(model_path=model + "_1.tflite")
+    interpreter_1.allocate_tensors()
+    interpreter_2 = tflite.Interpreter(model_path=model + "_2.tflite")
+    interpreter_2.allocate_tensors()
+
+    return interpreter_1, interpreter_2
+
+def process_audio(interpreter_1, interpreter_2, wall_mic_1d_array, server_closetalk_1d_array):
+    audio, lpb = wall_mic_1d_array, server_closetalk_1d_array
+    if len(audio.shape) > 1 or len(lpb.shape) > 1:
+        raise ValueError("Only single channel files are allowed.")
+    # check for unequal length
+    if len(lpb) > len(audio):
+        lpb = lpb[: len(audio)]
+    if len(lpb) < len(audio):
+        audio = audio[: len(lpb)]
+    # set block len and block shift
+    block_len = 512
+    block_shift = 128
+    # save the len of the audio for later
+    len_audio = len(audio)
+    # pad the audio file
+    padding = np.zeros((block_len - block_shift))
+    audio = np.concatenate((padding, audio, padding))
+    lpb = np.concatenate((padding, lpb, padding))
+    # get details from interpreters
+    input_details_1 = interpreter_1.get_input_details()
+    output_details_1 = interpreter_1.get_output_details()
+    input_details_2 = interpreter_2.get_input_details()
+    output_details_2 = interpreter_2.get_output_details()
+    # preallocate states for lstms
+    states_1 = np.zeros(input_details_1[1]["shape"]).astype("float32")
+    states_2 = np.zeros(input_details_2[1]["shape"]).astype("float32")
+    # preallocate out file
+    out_file = np.zeros((len(audio)))
+    # create buffer
+    in_buffer = np.zeros((block_len)).astype("float32")
+    in_buffer_lpb = np.zeros((block_len)).astype("float32")
+    out_buffer = np.zeros((block_len)).astype("float32")
+    # calculate number of frames
+    num_blocks = (audio.shape[0] - (block_len - block_shift)) // block_shift
+    # iterate over the number of frames
+    for idx in range(num_blocks):
+        # shift values and write to buffer of the input audio
+        in_buffer[:-block_shift] = in_buffer[block_shift:]
+        in_buffer[-block_shift:] = audio[
+            idx * block_shift : (idx * block_shift) + block_shift
+        ]
+        # shift values and write to buffer of the loopback audio
+        in_buffer_lpb[:-block_shift] = in_buffer_lpb[block_shift:]
+        in_buffer_lpb[-block_shift:] = lpb[
+            idx * block_shift : (idx * block_shift) + block_shift
+        ]
+
+        # calculate fft of input block
+        in_block_fft = np.fft.rfft(np.squeeze(in_buffer)).astype("complex64")
+        # create magnitude
+        in_mag = np.abs(in_block_fft)
+        in_mag = np.reshape(in_mag, (1, 1, -1)).astype("float32")
+        # calculate log pow of lpb
+        lpb_block_fft = np.fft.rfft(np.squeeze(in_buffer_lpb)).astype("complex64")
+        lpb_mag = np.abs(lpb_block_fft)
+        lpb_mag = np.reshape(lpb_mag, (1, 1, -1)).astype("float32")
+        # set tensors to the first model
+        interpreter_1.set_tensor(input_details_1[0]["index"], in_mag)
+        interpreter_1.set_tensor(input_details_1[2]["index"], lpb_mag)
+        interpreter_1.set_tensor(input_details_1[1]["index"], states_1)
+        # run calculation
+        interpreter_1.invoke()
+        # # get the output of the first block
+        out_mask = interpreter_1.get_tensor(output_details_1[0]["index"])
+        states_1 = interpreter_1.get_tensor(output_details_1[1]["index"])
+        # apply mask and calculate the ifft
+        estimated_block = np.fft.irfft(in_block_fft * out_mask)
+        # reshape the time domain frames
+        estimated_block = np.reshape(estimated_block, (1, 1, -1)).astype("float32")
+        in_lpb = np.reshape(in_buffer_lpb, (1, 1, -1)).astype("float32")
+        # set tensors to the second block
+        interpreter_2.set_tensor(input_details_2[1]["index"], states_2)
+        interpreter_2.set_tensor(input_details_2[0]["index"], estimated_block)
+        interpreter_2.set_tensor(input_details_2[2]["index"], in_lpb)
+        # run calculation
+        interpreter_2.invoke()
+        # get output tensors
+        out_block = interpreter_2.get_tensor(output_details_2[0]["index"])
+        states_2 = interpreter_2.get_tensor(output_details_2[1]["index"])
+
+        # shift values and write to buffer
+        out_buffer[:-block_shift] = out_buffer[block_shift:]
+        out_buffer[-block_shift:] = np.zeros((block_shift))
+        out_buffer += np.squeeze(out_block)
+        # write block to output file
+        out_file[idx * block_shift : (idx * block_shift) + block_shift] = out_buffer[
+            :block_shift
+        ]
+    # cut audio to otiginal length
+    predicted_speech = out_file[
+        (block_len - block_shift) : (block_len - block_shift) + len_audio
+    ]
+    # check for clipping
+    if np.max(predicted_speech) > 1:
+        predicted_speech = predicted_speech / np.max(predicted_speech) * 0.99
+
+    return predicted_speech
 
 def process_file(interpreter_1, interpreter_2, audio_file_name, out_file_name):
     """
-    Funtion to read an audio file, process it by the network and write the
+    Function to read an audio file, process it by the network and write the
     enhanced audio to .wav file.
 
     Parameters

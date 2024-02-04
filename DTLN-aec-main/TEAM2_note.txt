@@ -1,4 +1,4 @@
-*_mic.wav = the near-end microphone signals and *_lpb.wav = the far-end microphone or loopback signals.
+*_mic.wav = the near-end microphone signals (i.e. wall_mic) and *_lpb.wav = the far-end microphone or loopback signals (i.e. close-talk).
 
 FYI - I included the AEC repo here explicitly for convenience,
 since we would want to integrate this into our of our pipeline
@@ -10,6 +10,10 @@ also
 FYI things I removed because of error on my computer (which I am figuring a workaround for) -
  - tensorflow==2.3.1 (I separately installed tensorflow 2.5.1)
  - grpcio==1.33.1
+
+I had to upgrade protobuf to run this
+pip install --upgrade protobuf
+
 
 original run command:
 python run_aec.py -i [path to input folder containing _lpb.wav and _mic.wav] -o [output folder] -m ./pretrained_models/dtln_aec_[512/128/256]

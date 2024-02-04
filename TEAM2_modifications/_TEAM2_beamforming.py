@@ -28,13 +28,16 @@ def get_mic_locations(channels=(4, 5, 6, 7, 8)):
         raise ValueError("At least one channel must be specified.")
 
 
-def delaysum_beamforming(audio_tensor, mode="doa", save_file=False, save_fname="demo_audio"):
+def delaysum_beamforming(audio_tensor, mode="doa", save_file=False, save_fname="demo_audio",
+                         channels=(4, 5, 6, 7, 8), pre_instantiated=None):
     """
 
     :param audio_tensor: 3D torch float-tensor: [batch, time (no. of samples), channels]
     :param mode: str - "doa" or "tdoa" - whether to use direction of arrival or time difference of arrival
     :param save_file: whether to save the beamformed audio for inspection
     :param save_fname: if saving file, the filename to be used - the suffix "_delaysumed_{mode}" will be appended
+    :param pre_instantiated: obj - if not None, unpack the array/tuple and use the already-made instances of
+    STFT, ISTFT, Covariance, DelaySum and (SrpPhat OR GccPhat). [IN THIS ORDER]
     :return: 3D torch float-tensor [batch, time(no. of samples), channels]
     """
     # Delay-and-Sum Beamforming - adapting code from SpeechBrain
@@ -42,25 +45,39 @@ def delaysum_beamforming(audio_tensor, mode="doa", save_file=False, save_fname="
     # TODO: it seems like the beamforming operation shortened the test audio array by a few hundred samples (sr=16kHz),
     #  find out what's going on
 
-    stft, istft = STFT(sample_rate=SAMPLING_RATE, n_fft=1200), ISTFT(sample_rate=SAMPLING_RATE, n_fft=1200)
-    covariance = Covariance()
-    delaysum = DelaySum()
+
+    if pre_instantiated == None:
+        stft, istft = STFT(sample_rate=SAMPLING_RATE, n_fft=1200), ISTFT(sample_rate=SAMPLING_RATE, n_fft=1200)
+        covariance = Covariance()
+        delaysum = DelaySum()
+        srpphat_or_gccphat = None
+    else:
+        stft, istft, covariance, delaysum, srpphat_or_gccphat = pre_instantiated
+
     Xs = stft(audio_tensor)
     XXs = covariance(Xs)
 
     if mode == "doa":
         # if using directions of arrival
-        srpphat = SrpPhat(mics=get_mic_locations())
+        if pre_instantiated == None:
+            srpphat = SrpPhat(mics=get_mic_locations(channels=channels))
+        else:
+            srpphat = srpphat_or_gccphat
+
         doas = srpphat(XXs)
         # TODO: at some point we might want to print out the estimated doas and check if it matches up with what we know
         #  i.e. driver is around X meters away from the microphones etc.
-        Ys_ds = delaysum(Xs, doas, doa_mode=True, mics=get_mic_locations(), fs=SAMPLING_RATE)
+        Ys_ds = delaysum(Xs, doas, doa_mode=True, mics=get_mic_locations(channels=channels), fs=SAMPLING_RATE)
 
     elif mode == "tdoa":
         # if using time difference of arrival
-        gccphat = GccPhat()
+        if pre_instantiated == None:
+            gccphat = GccPhat()
+        else:
+            gccphat = srpphat_or_gccphat
+
         time_diff_of_arrival = gccphat(XXs)
-        Ys_ds = delaysum(Xs, time_diff_of_arrival, doa_mode=False, mics=get_mic_locations(), fs=SAMPLING_RATE)
+        Ys_ds = delaysum(Xs, time_diff_of_arrival, doa_mode=False, mics=get_mic_locations(channels=channels), fs=SAMPLING_RATE)
     else:
         raise ValueError("Mode must either be doa or tdoa.")
 
