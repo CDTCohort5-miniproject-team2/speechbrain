@@ -70,10 +70,12 @@ def initialise_aec(model_size=512):
     :param model_size: int - must be 128, 256 or 512
     :return: interpreter1, interpreter2 - these will be used by the do_aec function for performing AEC
     """
+    print("Initialising AEC model.")
     if model_size not in [128, 256, 512]:
         raise ValueError("AEC component: model_size must be 128, 256, or 512.")
     aec_pretrained_fpath = f"../DTLN-aec-main/pretrained_models/dtln_aec_{model_size}"
     interpreter1, interpreter2 = run_aec.initialise_interpreters(model=aec_pretrained_fpath)
+    print("AEC model initialised.")
     return interpreter1, interpreter2
 
 def do_aec(interpreter1, interpreter2, wall_mic_array_1d, server_closetalk_array_1d):
@@ -84,6 +86,9 @@ def do_aec(interpreter1, interpreter2, wall_mic_array_1d, server_closetalk_array
     :param server_closetalk_array_1d:
     :return: 1d-array after AEC
     """
+    if len(server_closetalk_array_1d.shape) > 1:
+        server_closetalk_array_1d = server_closetalk_array_1d.squeeze(0)
+
     return run_aec.process_audio(interpreter1, interpreter2, wall_mic_array_1d, server_closetalk_array_1d)
 
 def initialise_enhancing():
@@ -129,7 +134,24 @@ def first_aec_then_beamforming():
     # Finally do beamforming
     pass
 
-def enhancer_test(play_out=True):
+def aec_test(play_out=True):
+    wall_mics_array, server_closetalk_array = get_test_sample()
+    single_wall_mic_array = wall_mics_array[1, :]
+    print(single_wall_mic_array.shape)
+    print(server_closetalk_array.shape)
+    interpreter1, interpreter2 = initialise_aec()
+    print("Performing AEC.")
+    post_aec_array = do_aec(interpreter1, interpreter2, single_wall_mic_array, server_closetalk_array.squeeze(0))
+    print("AEC done.")
+    if play_out:
+        print("Playing pre-AEC wall mic")
+        prepare_kroto_data.play_audio_array(single_wall_mic_array)
+        print("Playing post-AEC wall mic")
+        prepare_kroto_data.play_audio_array(post_aec_array)
+
+
+
+def enhancing_test(play_out=True):
     """
     WARNING: THIS ENHANCER MODEL SEEMS TO OVER-AMPLIFY THE SIGNAL.
     WE MAY NEED TO DO SOME POST-PROCESSING E.G. TO AVOID CLIPPING.
@@ -152,7 +174,7 @@ def enhancer_test(play_out=True):
 
 
 def main():
-    enhancer_test()
+    aec_test()
 
 if __name__ == "__main__":
     main()

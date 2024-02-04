@@ -7,8 +7,6 @@ from speechbrain.processing.multi_mic import GccPhat, SrpPhat
 from speechbrain.processing.multi_mic import DelaySum
 import numpy as np
 
-import TEAM2_utils
-
 SAMPLING_RATE = 48000
 
 WALL_MIC_LOCATIONS_MAPPING = {4: [-0.10, 0.00, 0.00],
