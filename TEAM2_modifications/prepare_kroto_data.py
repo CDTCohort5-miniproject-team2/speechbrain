@@ -10,13 +10,23 @@ import sounddevice as sd
 import tqdm
 from tqdm import tqdm
 
-CHANNEL_MAPPING = {
+# this scheme was used in our earlier recording sessions (e.g. 18_12_2023), retained for ref
+OLD_CHANNEL_MAPPING = {
     "dashboard_mics": [0, 1, 2, 3],
     # Channels 4, 5 and 6 are not used
     "wall_mics": [7, 8, 9, 10, 11],
     "passengers_closetalk": [12, 13],
     "customer_closetalk": [14],
     "server_closetalk": [15],
+}
+
+# the new scheme that we are using going forward, with unused channels removed
+CHANNEL_MAPPING = {
+    "dashboard_mics": [0, 1, 2, 3],
+    "wall_mics": [4, 5, 6, 7, 8],
+    "passengers_closetalk": [10, 11],
+    "customer_closetalk": [9],
+    "server_closetalk": [12],
 }
 
 def get_channels_by_name(multichannel_audio_array, target_channel_name):
@@ -26,7 +36,7 @@ def get_channels_by_name(multichannel_audio_array, target_channel_name):
     :param target_channel_name:
     :return:
     """
-    assert multichannel_audio_array.shape[0] == 16, "The function_get_channels_by_name can only operate on the full 16-channel array."
+    assert multichannel_audio_array.shape[0] in [13, 16], "The function_get_channels_by_name can only operate on the full 13- or 16-channel array."
     try:
         target_channels = np.array(CHANNEL_MAPPING[target_channel_name])
     except KeyError:
@@ -95,7 +105,7 @@ class KrotoData:
     def downsample_and_save_audio(self):
         """
         Downsample all audio in the "Audio" directory and save the downsampled audio to "Audio_downsampled".
-        TEAM2 note: run this only if you require the downsampled version of the full 16-channel audio
+        TEAM2 note: run this only if you require the downsampled version of the full 13- or 16-channel audio
         (e.g. for testing new code).
         Otherwise, downsampling is performed as part of the function separate_channels_and_save_audio.
         :return:
@@ -118,7 +128,8 @@ class KrotoData:
                 scipy.io.wavfile.write(downsampled_audio_fpath, self.target_sr, audio_array)
         print("Directory with downsampled audio prepared.")
 
-    def get_demo_audio_array(self, audio_fname="", audio_idx=0, downsampled=True, timeslice=(0.0, 0.0)):
+    def get_demo_audio_array(self, audio_fname="", audio_idx=0, downsampled=True, timeslice=(0.0, 0.0),
+                             channel_name=""):
         if audio_fname:
             fpath = self.raw_audio_dir/audio_fname
             if not fpath.exists():
@@ -132,12 +143,15 @@ class KrotoData:
         if downsampled and (sr != self.target_sr):
             demo_array = librosa.resample(demo_array, orig_sr=sr, target_sr=self.target_sr)
             sr = self.target_sr
+
+        if channel_name:
+            demo_array = get_channels_by_name(demo_array, channel_name)
         
         return get_audio_array_timeslice(demo_array, start_time=timeslice[0], end_time=timeslice[1], sr=int(sr))
 
     def separate_channels_and_save_audio(self, downsampling=True):
         """
-        Splits the full 16-channel audio files found in the "Audio" folder according to the CHANNEL_MAPPING partitions.
+        Splits the full 13- or 16-channel audio files found in the "Audio" folder according to the CHANNEL_MAPPING partitions.
         Saves down the audio files (with channels filtered) into new directories named after these partitions.
         :param downsampling: boolean - if True, performs downsamples the audio to self.target_sr before saving
         :return: None

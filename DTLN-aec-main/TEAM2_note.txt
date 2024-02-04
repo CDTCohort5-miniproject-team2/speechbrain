@@ -1,0 +1,16 @@
+*_mic.wav = the near-end microphone signals and *_lpb.wav = the far-end microphone or loopback signals.
+
+FYI - I included the AEC repo here explicitly for convenience,
+since we would want to integrate this into our of our pipeline
+
+NOTE that we may need to modify run_aec so that we can run it as part of a pipeline, instead of just from the command line
+NOTE also the extra speechbrain_plus_requirements.txt to be pip installed (I created this from the initial_requirements.txt
+and removing the module (for now, only numpy) that we have already installed when initialising speechbrain)
+also
+FYI things I removed because of error on my computer (which I am figuring a workaround for) -
+ - tensorflow==2.3.1 (I separately installed tensorflow 2.5.1)
+ - grpcio==1.33.1
+
+original run command:
+python run_aec.py -i [path to input folder containing _lpb.wav and _mic.wav] -o [output folder] -m ./pretrained_models/dtln_aec_[512/128/256]
+
