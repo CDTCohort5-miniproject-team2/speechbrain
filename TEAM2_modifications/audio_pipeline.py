@@ -120,7 +120,7 @@ def do_asr(audio_array_1d):
 
 def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
     # TODO: need testing
-    post_beamform_array = do_beamforming(audio_array_nd, "doa", len(audio_array_nd), initialised_beamformer)
+    post_beamform_array = do_beamforming(audio_array_nd, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
 
     return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
 
@@ -134,7 +134,7 @@ def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, serve
     # it would be good to parallelise this, but not sure if it could be done.
     # alternatively, we need a good multichannel acoustic echo cancellation library
 
-    return do_beamforming(post_aec_array, "doa", len(post_aec_array), initialised_beamformer)
+    return do_beamforming(post_aec_array, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
 
 def aec_test(play_out=True):
     wall_mics_array, server_closetalk_array = get_test_sample()
@@ -151,7 +151,18 @@ def aec_test(play_out=True):
         print("Playing post-AEC wall mic")
         prepare_kroto_data.play_audio_array(post_aec_array)
 
-
+def first_aec_then_beamforming_test(play_out=True):
+    wall_mics_array, server_closetalk_array = get_test_sample()
+    interpreter1, interpreter2 = initialise_aec()
+    initialised_beamformer = initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa")
+    processed_array = first_aec_then_beamforming(interpreter1, interpreter2,
+                                                 wall_mics_array, server_closetalk_array,
+                                                 initialised_beamformer)
+    if play_out:
+        print("Playing pre-AEC/beamforming wall mic")
+        prepare_kroto_data.play_audio_array(wall_mics_array)
+        print("Playing post-AEC/beamforming wall mic")
+        prepare_kroto_data.play_audio_array(processed_array)
 
 def enhancing_test(play_out=True):
     """
@@ -176,7 +187,7 @@ def enhancing_test(play_out=True):
 
 
 def main():
-    aec_test()
+    first_aec_then_beamforming_test()
 
 if __name__ == "__main__":
     main()
