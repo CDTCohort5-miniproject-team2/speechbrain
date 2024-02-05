@@ -118,21 +118,23 @@ def initialise_asr():
 def do_asr(audio_array_1d):
     pass
 
-def first_beamforming_then_aec():
-    # TODO
-    # First beamforming
+def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
+    # TODO: need testing
+    post_beamform_array = do_beamforming(audio_array_nd, "doa", len(audio_array_nd), initialised_beamformer)
 
-    # Then AEC
-    pass
+    return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
 
-def first_aec_then_beamforming():
-    # TODO
-    # First break apart the wall_mic_array into single channels
+def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
+    # TODO: need testing
+    # breaking the wall_mics apart and then run aec on each of these
+    post_aec_array = np.array(
+        [do_aec(interpreter1, interpreter2, array_1d, server_closetalk)
+         for array_1d in audio_array_nd]
+    )
+    # it would be good to parallelise this, but not sure if it could be done.
+    # alternatively, we need a good multichannel acoustic echo cancellation library
 
-    # Then run AEC on each of these
-
-    # Finally do beamforming
-    pass
+    return do_beamforming(post_aec_array, "doa", len(post_aec_array), initialised_beamformer)
 
 def aec_test(play_out=True):
     wall_mics_array, server_closetalk_array = get_test_sample()
