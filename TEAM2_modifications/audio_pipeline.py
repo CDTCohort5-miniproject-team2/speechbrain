@@ -124,6 +124,20 @@ def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, serve
 
     return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
 
+def demo():
+    interpreter1, interpreter2 = initialise_aec()
+    enhancer_model = initialise_enhancing()
+    beamformer_model = initialise_beamforming()
+
+    wall_mics_array, server_closetalk_array = get_test_sample()
+
+    output_array = first_beamforming_then_aec(interpreter1, interpreter2, wall_mics_array, server_closetalk_array, beamformer_model)
+    output_array = do_enhancing(output_array, enhancer_model)
+
+    prepare_kroto_data.play_audio_array(wall_mics_array)
+    prepare_kroto_data.play_audio_array(output_array)
+
+
 def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
     # TODO: need testing
     # breaking the wall_mics apart and then run aec on each of these
@@ -185,9 +199,8 @@ def enhancing_test(play_out=True):
         print("Playing enhanced array")
         prepare_kroto_data.play_audio_array(enhanced_array_normalised)
 
-
 def main():
-    first_aec_then_beamforming_test()
+    demo()
 
 if __name__ == "__main__":
     main()
