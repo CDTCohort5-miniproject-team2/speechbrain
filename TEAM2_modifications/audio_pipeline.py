@@ -2,8 +2,11 @@ import torch
 import sys
 import numpy as np
 
+from faster_whisper import WhisperModel
+
 import prepare_kroto_data
 import _TEAM2_beamforming as bf
+
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
 print("Importing run_aec")
@@ -61,7 +64,7 @@ def do_beamforming(audio_array_2d, mode, channels, initialised_beamformer):
     audio_tensor = torch.FloatTensor(audio_array_2d.T).unsqueeze(0)
     beamformed_tensor = bf.delaysum_beamforming(audio_tensor, mode=mode, channels=channels,
                                                 pre_instantiated=initialised_beamformer)
-    beamformed_array = beamformed_tensor.squeeze((0, -1)).numpy()
+    beamformed_array = beamformed_tensor.squeeze(dim=(0, -1)).numpy()
     return beamformed_array
 
 def initialise_aec(model_size=512):
@@ -100,6 +103,7 @@ def initialise_enhancing():
     return model
 
 def do_enhancing(audio_array_1d, model, normalise=True):
+    # TODO: extend this function to work with audio as file in addition to as a numpy array
     audio_tensor = torch.FloatTensor(audio_array_1d).unsqueeze(0)
     # audio_tensor has size (1, n_samples)
     est_sources = model.separate_batch(audio_tensor)
@@ -112,31 +116,27 @@ def do_enhancing(audio_array_1d, model, normalise=True):
         enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
     return enhanced_array
 
-def initialise_asr():
-    pass
-
-def do_asr(audio_array_1d):
-    pass
+def initialise_asr(model_name="tiny.en"):
+    print("Initialising ASR model.")
+    asr_model = WhisperModel(model_name)
+    print("ASR model initialised.")
+    return asr_model
+def do_asr(audio_array_1d_or_fpath, model):
+    # note for ref: WhisperModel's transcribe method can process audio either as file or as array
+    return model.transcribe(audio_array_1d_or_fpath)
 
 def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
     # TODO: need testing
     post_beamform_array = do_beamforming(audio_array_nd, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
-
     return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
 
-def demo():
+def pipeline_demo():
     interpreter1, interpreter2 = initialise_aec()
     enhancer_model = initialise_enhancing()
     beamformer_model = initialise_beamforming()
-
     wall_mics_array, server_closetalk_array = get_test_sample()
-
     output_array = first_beamforming_then_aec(interpreter1, interpreter2, wall_mics_array, server_closetalk_array, beamformer_model)
     output_array = do_enhancing(output_array, enhancer_model)
-
-    prepare_kroto_data.play_audio_array(wall_mics_array)
-    prepare_kroto_data.play_audio_array(output_array)
-
 
 def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
     # TODO: need testing
@@ -165,13 +165,21 @@ def aec_test(play_out=True):
         print("Playing post-AEC wall mic")
         prepare_kroto_data.play_audio_array(post_aec_array)
 
-def first_aec_then_beamforming_test(play_out=True):
+def beamforming_and_aec_test(play_out=True, aec_first=False):
     wall_mics_array, server_closetalk_array = get_test_sample()
     interpreter1, interpreter2 = initialise_aec()
     initialised_beamformer = initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa")
-    processed_array = first_aec_then_beamforming(interpreter1, interpreter2,
-                                                 wall_mics_array, server_closetalk_array,
-                                                 initialised_beamformer)
+
+    if aec_first:
+        processed_array = first_aec_then_beamforming(interpreter1, interpreter2,
+                                                     wall_mics_array, server_closetalk_array,
+                                                     initialised_beamformer)
+    else:
+        # do beamforming first
+        processed_array = first_beamforming_then_aec(interpreter1, interpreter2,
+                                                     wall_mics_array, server_closetalk_array,
+                                                     initialised_beamformer)
+
     if play_out:
         print("Playing pre-AEC/beamforming wall mic")
         prepare_kroto_data.play_audio_array(wall_mics_array)
@@ -199,8 +207,22 @@ def enhancing_test(play_out=True):
         print("Playing enhanced array")
         prepare_kroto_data.play_audio_array(enhanced_array_normalised)
 
+def asr_test(play_out=False):
+    asr_model = initialise_asr()
+    wall_mics_array, server_closetalk_array = get_test_sample()
+    single_wall_mic_array = wall_mics_array[1, :]
+    if play_out:
+        print("Playing pre-enhanced single-channel wall mic")
+        prepare_kroto_data.play_audio_array(single_wall_mic_array)
+
+    segments, info = do_asr(single_wall_mic_array, asr_model)
+    print(segments)
+
 def main():
-    demo()
+    beamforming_and_aec_test(aec_first=True)
+    beamforming_and_aec_test(aec_first=False)
 
 if __name__ == "__main__":
     main()
+
+    
