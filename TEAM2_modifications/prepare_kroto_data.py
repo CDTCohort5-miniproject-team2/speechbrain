@@ -98,35 +98,23 @@ class KrotoData:
 
         self.raw_audio_dir, self.transcript_dir, self.log_dir = self.parent_dirpath/"Audio", self.parent_dirpath/"Text", self.parent_dirpath/"Log"
 
+        if not self.raw_audio_dir.exists():
+            raise ValueError(f"'Audio' folder not found within the specified directory: {dirpath_str}. \n"
+                             f"Please ensure audio files are saved in path {dirpath_str}/Audio/some_audio_file.wav")
+
         self.audio_catalogue = list(self.raw_audio_dir.glob("*.wav"))
 
         self.target_sr = target_sr
 
-    def downsample_and_save_audio(self):
-        """
-        Downsample all audio in the "Audio" directory and save the downsampled audio to "Audio_downsampled".
-        TEAM2 note: run this only if you require the downsampled version of the full 13- or 16-channel audio
-        (e.g. for testing new code).
-        Otherwise, downsampling is performed as part of the function separate_channels_and_save_audio.
-        :return:
-        """
-        downsampled_audio_dir = self.parent_dirpath / "Audio_downsampled"
+        sub_array_dirpaths = [self.parent_dirpath/f"Audio_{channel_name}" for channel_name in CHANNEL_MAPPING.keys()]
 
-        if not downsampled_audio_dir.exists():
-            os.mkdir(downsampled_audio_dir)
-
-        for raw_wav_fpath in self.raw_audio_dir.glob("*.wav"):
-            downsampled_audio_fpath = downsampled_audio_dir / raw_wav_fpath.name
-            if not downsampled_audio_fpath.exists():
-                audio_array, source_sr = librosa.load(raw_wav_fpath, sr=None, mono=False)
-                # audio_array has shape (n_channels, n_samples), samples are in dtype float32
-                if source_sr != self.target_sr:
-                    audio_array = librosa.resample(audio_array, orig_sr=source_sr, target_sr=self.target_sr)
-
-                # NB scipy.io.wavfile.write expects (num_samples, num_channels)
-                audio_array = np.swapaxes(audio_array, 0, 1)
-                scipy.io.wavfile.write(downsampled_audio_fpath, self.target_sr, audio_array)
-        print("Directory with downsampled audio prepared.")
+        if any([not dirpath.exists() for dirpath in sub_array_dirpaths]):
+            initiate_separate_channels_and_save_audio = input("Raw audio directory loaded. "
+                                                              "Separate out channels, downsample and save audio? (Y/N): ")
+            if "y" in initiate_separate_channels_and_save_audio.lower():
+                print("Separating audio channels for downsampling and saving...")
+                self.separate_channels_and_save_audio(downsampling=True)
+                print("Audio saved.")
 
     def get_demo_audio_array(self, audio_fname="", audio_idx=0, downsampled=True, timeslice=(0.0, 0.0),
                              channel_name=""):
@@ -179,8 +167,34 @@ class KrotoData:
 
         print("Audio files saved successfully.")
 
+    def _downsample_and_save_audio(self):
+        """
+        Downsample all audio in the "Audio" directory and save the downsampled audio to "Audio_downsampled".
+        TEAM2 note: run this only if you require the downsampled version of the full 13- or 16-channel audio
+        (e.g. for testing new code).
+        Otherwise, downsampling is performed as part of the function separate_channels_and_save_audio.
+        :return:
+        """
+        downsampled_audio_dir = self.parent_dirpath / "Audio_downsampled"
 
-if __name__ == "__main__":
+        if not downsampled_audio_dir.exists():
+            os.mkdir(downsampled_audio_dir)
+
+        for raw_wav_fpath in self.raw_audio_dir.glob("*.wav"):
+            downsampled_audio_fpath = downsampled_audio_dir / raw_wav_fpath.name
+            if not downsampled_audio_fpath.exists():
+                audio_array, source_sr = librosa.load(raw_wav_fpath, sr=None, mono=False)
+                # audio_array has shape (n_channels, n_samples), samples are in dtype float32
+                if source_sr != self.target_sr:
+                    audio_array = librosa.resample(audio_array, orig_sr=source_sr, target_sr=self.target_sr)
+
+                # NB scipy.io.wavfile.write expects (num_samples, num_channels)
+                audio_array = np.swapaxes(audio_array, 0, 1)
+                scipy.io.wavfile.write(downsampled_audio_fpath, self.target_sr, audio_array)
+        print("Directory with downsampled audio prepared.")
+
+
+def main():
     demo_dirpath = "test_kroto_data/18_12_2023"
     # TEAM2 instructions: replace this with the path where you saved the recording session's data folder
     # this data folder should contain the sub-folders "Audio", "Logs" and "Text"
@@ -194,6 +208,11 @@ if __name__ == "__main__":
     demo_array = demo_kroto_data.get_demo_audio_array(demo_wav_fname, timeslice=(4.0, 16.0))
     demo_array_wall_mics_only = get_channels_by_name(demo_array, "wall_mics")
     play_audio_array(demo_array_wall_mics_only)
+
+
+if __name__ == "__main__":
+    main()
+
 
 
 
