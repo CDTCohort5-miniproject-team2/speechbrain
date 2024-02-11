@@ -38,6 +38,15 @@ def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 1
         mic_arrays.append(mic_array)
     return mic_arrays
 
+def initialise_audio_pipeline():
+    # TODO: extend function to allow for various optional arguments/customisations
+    initialised_beamformer = initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa")
+    interpreter1, interpreter2 = initialise_aec(model_size=128)
+    enhancer_model = initialise_enhancing()
+    asr_model = initialise_asr(model_name="distil-large-v2", long_transcription=False, batch_input=False)
+
+    return initialised_beamformer, interpreter1, interpreter2, enhancer_model, asr_model
+
 def initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa"):
     """
     This is refactored from _TEAM2_beamforming.py
@@ -151,6 +160,9 @@ def do_asr(audio_array_1d_or_fpath, asr_model, distil_whisper=True):
     # TODO: distil_whisper=False was intended for faster-whisper but needs fixing - this is currently resulting in
     #  "OMP: Error #15: Initializing libomp.dylib, but found libiomp5.dylib already initialized."
 
+    if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
+        audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
+
     if distil_whisper:
         return asr_model(audio_array_1d_or_fpath, return_timestamps=True)
     else:
@@ -170,6 +182,12 @@ def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, serve
     # alternatively, we need a good multichannel acoustic echo cancellation library
 
     return do_beamforming(post_aec_array, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
+
+
+
+
+
+
 
 def main():
     pass
