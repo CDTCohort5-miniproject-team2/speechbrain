@@ -2,7 +2,10 @@ import torch
 import sys
 import numpy as np
 
-from faster_whisper import WhisperModel
+from speechbrain.pretrained import SepformerSeparation as separator
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+# from faster_whisper import WhisperModel
 
 import prepare_kroto_data
 import _TEAM2_beamforming as bf
@@ -13,10 +16,7 @@ print("Importing run_aec")
 import run_aec
 print("run_aec imported.")
 
-from speechbrain.pretrained import SepformerSeparation as separator
-import torchaudio
 
-import transformers
 
 
 CATALOGUE = [
@@ -24,7 +24,7 @@ CATALOGUE = [
     "test_kroto_data/18_12_2023",
     "test_kroto_data/01_02_24",
 ]
-kroto_data = prepare_kroto_data.KrotoData(CATALOGUE[-1])
+kroto_data = prepare_kroto_data.KrotoData(CATALOGUE[1])
 
 def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
     """
@@ -116,17 +116,50 @@ def do_enhancing(audio_array_1d, model, normalise=True):
         enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
     return enhanced_array
 
-def initialise_asr(model_name="tiny.en"):
-    print("Initialising ASR model.")
-    asr_model = WhisperModel(model_name)
-    print("ASR model initialised.")
-    return asr_model
-def do_asr(audio_array_1d_or_fpath, model):
-    # note for ref: WhisperModel's transcribe method can process audio either as file or as array
-    return model.transcribe(audio_array_1d_or_fpath)
+def initialise_asr(model_name="distil-large-v2", long_transcription=False, batch_input=False):
+    # set long_transcription to True if the intended audio/file for inference is >30 seconds
+    # set batch_input to True if intending to use the model on batches of audio or files
+    if "distil" in model_name:
+        device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+        model_id = "distil-whisper/" + model_name
+        model = AutoModelForSpeechSeq2Seq.from_pretrained(
+            model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+        )
+        model.to(device)
+        processor = AutoProcessor.from_pretrained(model_id)
+
+        configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
+                          "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
+        if long_transcription:
+            configurations["chunk_length_s"] = 15
+        if batch_input:
+            configurations["batch_size"] = 16
+
+        return pipeline("automatic-speech-recognition", **configurations)
+
+    else:
+        torch_dtype = "fp16" if torch.cuda.is_available() else "int8"
+        # fallback to faster-whisper, not yet successfully implemented
+
+        # fyi: CPUs can't seem to work on float16 faster-whisper
+        # see https://github.com/SYSTRAN/faster-whisper/issues/65
+        print("Initialising ASR model.")
+        asr_model = None
+        # asr_model = WhisperModel(model_name, compute_type=torch_dtype)
+        print("ASR model initialised.")
+        return asr_model
+def do_asr(audio_array_1d_or_fpath, asr_model, distil_whisper=True):
+    # note for ref: faster-whisper WhisperModel's transcribe method can process audio either as file or as array
+    # TODO: distil_whisper=False was intended for faster-whisper but needs fixing - this is currently resulting in
+    #  "OMP: Error #15: Initializing libomp.dylib, but found libiomp5.dylib already initialized."
+
+    if distil_whisper:
+        return asr_model(audio_array_1d_or_fpath, return_timestamps=True)
+    else:
+        return asr_model.transcribe(audio_array_1d_or_fpath)
 
 def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
-    # TODO: need testing
     post_beamform_array = do_beamforming(audio_array_nd, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
     return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
 
@@ -139,7 +172,6 @@ def pipeline_demo():
     output_array = do_enhancing(output_array, enhancer_model)
 
 def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
-    # TODO: need testing
     # breaking the wall_mics apart and then run aec on each of these
     post_aec_array = np.array(
         [do_aec(interpreter1, interpreter2, array_1d, server_closetalk)
@@ -215,14 +247,14 @@ def asr_test(play_out=False):
         print("Playing pre-enhanced single-channel wall mic")
         prepare_kroto_data.play_audio_array(single_wall_mic_array)
 
-    segments, info = do_asr(single_wall_mic_array, asr_model)
-    print(segments)
+    asr_result = do_asr(single_wall_mic_array, asr_model)
+    print(asr_result)
 
 def main():
-    beamforming_and_aec_test(aec_first=True)
-    beamforming_and_aec_test(aec_first=False)
+    # beamforming_and_aec_test(aec_first=True)
+    # beamforming_and_aec_test(aec_first=False)
+    asr_test()
 
 if __name__ == "__main__":
     main()
 
-    
