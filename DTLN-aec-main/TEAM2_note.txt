@@ -12,3 +12,5 @@ I also removed the following because of error on my computer (which I am figurin
 
 To get this AEC running, I separately pip installed tensorflow 2.5.1; and upgraded protobuf
 using "pip install --upgrade protobuf"
+
+Paul: I needed to also seperately pip install h5py.
