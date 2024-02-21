@@ -46,7 +46,7 @@ def parse_folder(folder_name="01_02_24"):
         wall_mic = wall_mics[0, :]
 
         customer_transcript_output = customer_speech_pipeline.run_inference(
-            wall_mic, server_closetalk, f"test_kroto_data/{folder_name}/{scenario}_predicted_customer_transcript.txt")
+            wall_mic, server_closetalk, f"test_kroto_data/{folder_name}/{scenario}_predicted_customer_transcript")
 
         # server_speech_pipeline = audio_pipeline.AudioPipeline()
         # server_transcript_output = server_speech_pipeline.run_inference(

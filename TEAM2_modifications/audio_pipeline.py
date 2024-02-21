@@ -4,7 +4,7 @@ import numpy as np
 from speechbrain.pretrained import SepformerSeparation as separator
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import stable_whisper
-# NOTE TO TEAM: you will need to pip install optimum (and silero) to use stable whisper
+# NOTE TO TEAM: you will need to pip install optimum to use stable whisper
 
 import prepare_kroto_data
 
