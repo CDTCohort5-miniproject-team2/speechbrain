@@ -9,6 +9,9 @@ import numpy as np
 import sounddevice as sd
 import tqdm
 from tqdm import tqdm
+import re
+from spellchecker import SpellChecker
+from num2words import num2words
 
 # this scheme was used in our earlier recording sessions (e.g. 18_12_2023), retained for ref
 OLD_CHANNEL_MAPPING = {
@@ -86,6 +89,55 @@ def cut_long_audio_files(dirpath, n_seconds=20.0):
     # TODO
     pass
 
+
+def spell_check(list_of_lines):
+    # TODO: not completed
+    checker = SpellChecker()
+    corrected_lines = []
+
+    # TODO: TEAM2 add to this word list here as you go, include british spellins
+    words_no_need_for_correction = ["whopper", "shwippy", "shwippes", "mambo", "shefburger",
+                                    "smarties", "oreo", "fanta", "coca", "cola", "ll", "s", "aren", "isn", "t",
+                                    "won", "sec", "didn", "doesn", "sec", "mo", "ve", "BBQ", "flavour", "flavours"]
+
+    # PUT IN COMMON MISTAKES
+    common_mistakes = {"shwippie": "shwippy", "erm": "um", "uhh": "uh"}
+
+    for line in list_of_lines:
+        corrected_line = line
+        corrections_mapping = {}
+        words_in_line = re.split(r"\W", line)
+
+        for word_i, word in enumerate(words_in_line):
+            if not word:
+                continue
+            potentially_misspelled = checker.unknown([word])
+            if (len(potentially_misspelled) > 0) and \
+                    (word.lower() not in list(common_mistakes.keys())) and \
+                    (word.lower() not in words_no_need_for_correction):
+
+                print(f"Spell check flagged typo in line: {line}")
+                user_correct = input(f"Correct '{word}' -> '{checker.correction(word)}'? \n"
+                                     f"(press ENTER to accept, \n"
+                                     f"or type in NO (uppercase) to leave unchanged, \n"
+                                     f"or type in manual correction (lowercase) then press ENTER): \n")
+                if user_correct.lower() == "no":
+                    continue
+                elif user_correct:
+                    corrections_mapping[word] = user_correct
+                else:
+                    corrections_mapping[word] = checker.correction(word)
+
+        for k, v in common_mistakes.items():
+            corrected_line = re.sub(r"(\W)"+k+r"(\W)", r"\1"+v+r"\2", corrected_line)
+
+        for k, v in corrections_mapping.items():
+            corrected_line = re.sub(r"(\W)"+k+r"(\W)", r"\1"+v+r"\2", corrected_line)
+
+        corrected_lines.append(corrected_line)
+
+    return corrected_lines
+
 class KrotoData:
     def __init__(self, dirpath_str, target_sr=16000):
         """
@@ -96,15 +148,30 @@ class KrotoData:
         if not (self.parent_dirpath.exists() and self.parent_dirpath.is_dir()):
             raise FileNotFoundError("Specified folder does not exist - check that you've provided the correct folder path")
 
-        self.raw_audio_dir, self.transcript_dir, self.log_dir = self.parent_dirpath/"Audio", self.parent_dirpath/"Text", self.parent_dirpath/"Log"
+        self.raw_audio_dir, self.raw_transcript_dir, self.raw_log_dir = self.parent_dirpath/"Audio", self.parent_dirpath/"Text", self.parent_dirpath/"Log"
 
         if not self.raw_audio_dir.exists():
             raise ValueError(f"'Audio' folder not found within the specified directory: {dirpath_str}. \n"
                              f"Please ensure audio files are saved in path {dirpath_str}/Audio/some_audio_file.wav")
 
-        self.audio_catalogue = list(self.raw_audio_dir.glob("*.wav"))
+        self.scenario_catalogue = [file.stem for file in self.raw_audio_dir.glob("*.wav")]
 
         self.target_sr = target_sr
+
+        self.server_transcript_dir, self.customer_transcript_dir = self.parent_dirpath/"Text_server", \
+                                                                   self.parent_dirpath/"Text_customer"
+
+        self.cleaned_server_transcript_dir, self.cleaned_customer_transcript_dir = self.parent_dirpath/"Text_server_cleaned", \
+                                                                                   self.parent_dirpath/"Text_customer_cleaned"
+
+        if (not self.server_transcript_dir.exists()) or (not self.customer_transcript_dir.exists()):
+            parse_jsonl = input("Raw text directory loaded. Parse jsonl files and "
+                                "separate customer/server transcripts? (Y/N): ")
+            if "y" in parse_jsonl.lower():
+                print("Parsing jsonl and saving...")
+                self.preprocess_transcripts()
+
+                print("Transcripts saved.")
 
         sub_array_dirpaths = [self.parent_dirpath/f"Audio_{channel_name}" for channel_name in CHANNEL_MAPPING.keys()]
 
@@ -115,6 +182,93 @@ class KrotoData:
                 print("Separating audio channels for downsampling and saving...")
                 self.separate_channels_and_save_audio(downsampling=True)
                 print("Audio saved.")
+
+    def preprocess_transcripts(self):
+
+        if not self.raw_transcript_dir.exists():
+            raise FileNotFoundError("Directory of raw transcripts (.jsonl format) not found. "
+                                    "Make sure raw transcripts are filed under {date_of_recording}/Text/*.jsonl")
+
+        if not self.server_transcript_dir.exists():
+            os.mkdir(self.server_transcript_dir)
+        if not self.customer_transcript_dir.exists():
+            os.mkdir(self.customer_transcript_dir)
+
+        for jsonl_fpath in self.raw_transcript_dir.glob("*.jsonl"):
+            jsonl_df = pd.read_json(path_or_buf=jsonl_fpath, lines=True)
+            for i, (_text, _meta, _path, _input_hash, _task_hash, _is_binary, _field_rows, _field_label, _field_id,
+                 _field_autofocus, _transcript, _orig_transcript, _view_id, _audio_spans, _answer, _timestamp,
+                 _annotator_id, _session_id) in jsonl_df.iterrows():
+                print(f"PARSING TRANSCRIPT FOR {_text}...")
+                server_lines, customer_lines = [], []
+
+                transcript_by_line = [line.strip() for line in re.split(r"([CS]: )", _transcript) if line.strip()]
+                for i, line in enumerate(transcript_by_line):
+                    if line == "S:":
+                        server_lines.append(transcript_by_line[i+1])
+                    elif line == "C:":
+                        customer_lines.append(transcript_by_line[i+1])
+
+                customer_transcript_fpath = self.customer_transcript_dir/f"{_text}_customer_transcript.txt"
+                server_transcript_fpath = self.server_transcript_dir/f"{_text}_server_transcript.txt"
+
+                customer_lines = spell_check(customer_lines)
+                server_lines = spell_check(server_lines)
+
+                joined_customer_lines = "\n".join(customer_lines)
+                joined_server_lines = "\n".join(server_lines)
+
+                with open(customer_transcript_fpath, "w") as f_obj:
+                    f_obj.write(joined_customer_lines)
+
+                with open(server_transcript_fpath, "w") as f_obj:
+                    f_obj.write(joined_server_lines)
+
+    def clean_transcripts_for_wer(self):
+        # TODO: THIS IS NOT YET DONE. THERE ARE QUITE A FEW ERRORS IN THE TRANSCRIPTS
+        #  THAT WE NEED TO DISCUSS AND REMEDY
+        print("Cleaning transcripts for WER metric.")
+        half_words = re.compile(r"\w+-\s]")
+        punctuations = re.compile(r"[,.!?\-]+(\W|$)")
+        with open("verbal_fillers.txt") as f_obj:
+            filler_words_list = "|".join([line.strip() for line in f_obj])
+
+        filler_words = re.compile(r"(^|\W)("+filler_words_list+r")($|\W)")
+
+        if not self.cleaned_customer_transcript_dir.exists():
+            os.mkdir(self.cleaned_customer_transcript_dir)
+        if not self.cleaned_server_transcript_dir.exists():
+            os.mkdir(self.cleaned_server_transcript_dir)
+
+        mapping = [(self.server_transcript_dir, self.cleaned_server_transcript_dir),
+                   (self.customer_transcript_dir, self.cleaned_customer_transcript_dir)]
+        for src_folder, tgt_folder in mapping:
+            for txt_file in src_folder.glob("*.txt"):
+                new_txt_fname = str(txt_file.stem) + "_cleaned.txt"
+                new_txt_fpath = tgt_folder/new_txt_fname
+                with open(txt_file) as f_obj, open(new_txt_fpath, "w") as new_f_obj:
+                    new_lines = []
+                    for line in f_obj:
+                        line = re.sub(half_words, " ", line.strip().lower())
+                        line = re.sub(punctuations, " ", line)
+                        line = re.sub(filler_words, " ", line)
+                        new_line = []
+                        for _word in line.split():
+                            if any([char.isdigit() for char in _word]):
+                                if "£" in _word or "$" in _word:
+                                    _word = _word.replace("£", "")
+                                    _word = _word.replace("$", "")
+                                    numbers_spelt_out = [num2words(int(num_word)) for num_word in _word.split(".")]
+                                    numbers_spelt_out.insert(1, "pounds")
+                                    # TODO: WE NEED TO DECIDE IF THIS SHOULD BE INFERRED
+                                else:
+                                    numbers_spelt_out = [num2words(int(num_word)) for num_word in _word.split(".")]
+                                new_line.extend(numbers_spelt_out)
+                            else:
+                                new_line.append(_word)
+                        new_lines.append(" ".join(new_line))
+                    new_f_obj.write("\n".join(new_lines))
+        print("Transcripts cleaned.")
 
     def get_demo_audio_array(self, audio_fname="", audio_idx=0, downsampled=True, timeslice=(0.0, 0.0),
                              channel_name=""):
@@ -167,48 +321,13 @@ class KrotoData:
 
         print("Audio files saved successfully.")
 
-    def _downsample_and_save_audio(self):
-        """
-        Downsample all audio in the "Audio" directory and save the downsampled audio to "Audio_downsampled".
-        TEAM2 note: run this only if you require the downsampled version of the full 13- or 16-channel audio
-        (e.g. for testing new code).
-        Otherwise, downsampling is performed as part of the function separate_channels_and_save_audio.
-        :return:
-        """
-        downsampled_audio_dir = self.parent_dirpath / "Audio_downsampled"
-
-        if not downsampled_audio_dir.exists():
-            os.mkdir(downsampled_audio_dir)
-
-        for raw_wav_fpath in self.raw_audio_dir.glob("*.wav"):
-            downsampled_audio_fpath = downsampled_audio_dir / raw_wav_fpath.name
-            if not downsampled_audio_fpath.exists():
-                audio_array, source_sr = librosa.load(raw_wav_fpath, sr=None, mono=False)
-                # audio_array has shape (n_channels, n_samples), samples are in dtype float32
-                if source_sr != self.target_sr:
-                    audio_array = librosa.resample(audio_array, orig_sr=source_sr, target_sr=self.target_sr)
-
-                # NB scipy.io.wavfile.write expects (num_samples, num_channels)
-                audio_array = np.swapaxes(audio_array, 0, 1)
-                scipy.io.wavfile.write(downsampled_audio_fpath, self.target_sr, audio_array)
-        print("Directory with downsampled audio prepared.")
-
-
 def main():
-    demo_dirpath = "test_kroto_data/18_12_2023"
+    demo_dirpath = "test_kroto_data/01_02_24"
     # TEAM2 instructions: replace this with the path where you saved the recording session's data folder
     # this data folder should contain the sub-folders "Audio", "Logs" and "Text"
-    demo_wav_fname = "20231218_1702902362163_scenariov3_11.wav"  # this is contained in the 18_12_2023 session folder
 
     demo_kroto_data = KrotoData(demo_dirpath)
-
-    demo_kroto_data.separate_channels_and_save_audio()
-
-    # Example for sense-checking the time-sliced, channel-isolated audio
-    demo_array = demo_kroto_data.get_demo_audio_array(demo_wav_fname, timeslice=(4.0, 16.0))
-    demo_array_wall_mics_only = get_channels_by_name(demo_array, "wall_mics")
-    play_audio_array(demo_array_wall_mics_only)
-
+    demo_kroto_data.clean_transcripts_for_wer()
 
 if __name__ == "__main__":
     main()

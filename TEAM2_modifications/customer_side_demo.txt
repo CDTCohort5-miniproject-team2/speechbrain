@@ -1,0 +1,39 @@
+10870	12620	Uh, yeah, hi, um,
+
+13220	14240	can I have a veggie wrap,
+
+15200	15552	please?
+
+19232	20340	Uh, no, just on its own,
+
+20340	23232	can I ask, how many calories is in a veggie wrap?
+
+26336	26580	Okay.
+
+26580	32000	In that case, could I have a cheeseburger as well?
+
+34760	36180	And how many calories is that?
+
+36180	36512	Just
+
+37440	37984	wondering.
+
+40864	41340	Okay, cool.
+
+41340	41440	Okay.
+
+41920	43800	And can you maybe
+
+44540	44640	add
+
+46432	47240	bacon?
+
+47240	48992	Add more bacon to it.
+
+55392	56000	Maybe two.
+
+56192	56608	And
+
+59104	62260	lastly, can I have a Sprite Zero, please?
+
+62660	84260	And make that regular? Yes please. Now that's it, thank you. Brilliant, thank you.

@@ -1,15 +1,12 @@
 import torch
 import sys
 import numpy as np
-
 from speechbrain.pretrained import SepformerSeparation as separator
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
-
-# from faster_whisper import WhisperModel
+import stable_whisper
+# NOTE TO TEAM: you will need to pip install optimum (and silero) to use stable whisper
 
 import prepare_kroto_data
-import _TEAM2_beamforming as bf
-
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
 print("Importing run_aec")
@@ -38,160 +35,167 @@ def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 1
         mic_arrays.append(mic_array)
     return mic_arrays
 
-def initialise_audio_pipeline():
-    # TODO: extend function to allow for various optional arguments/customisations
-    initialised_beamformer = initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa")
-    interpreter1, interpreter2 = initialise_aec(model_size=128)
-    enhancer_model = initialise_enhancing()
-    asr_model = initialise_asr(model_name="distil-large-v2", long_transcription=False, batch_input=False)
+class AudioPipeline:
+    def __init__(self,
+                 components=("aec", "asr"),
+                 aec_size=512,
+                 asr_model_name="whisper-large-v3",
+                 long_transcription=True,
+                 batch_input=False,
+                 normalise_after_enhancing=True):
+        self.components = components
+        self.aec_size = aec_size
+        self.long_transcription = long_transcription
+        self.batch_input = batch_input
+        self.asr_model_name = asr_model_name
+        self.normalise_after_enhancing = normalise_after_enhancing
 
-    return initialised_beamformer, interpreter1, interpreter2, enhancer_model, asr_model
+        self.aec_model, self.separator_model, self.enhancer_model, self.asr_model = None, None, None, None
+        mapping = {"aec": (self._initialise_aec, self._do_aec),
+                   "separator": (self._initialise_separator, self._do_separating),
+                   "enhancer": (self._initialise_enhancer, self._do_enhancing),
+                   "asr": (self._initialise_asr, self._do_asr),
+                   }
 
-def initialise_beamforming(channels=(4, 5, 6, 7, 8), mode="doa"):
-    """
-    This is refactored from _TEAM2_beamforming.py
-    :param channels: tuple of int (4, 5, 6, 7, 8)
-    :return:
-    """
-    stft, istft = bf.STFT(sample_rate=bf.SAMPLING_RATE, n_fft=1200), bf.ISTFT(sample_rate=bf.SAMPLING_RATE, n_fft=1200)
-    covariance = bf.Covariance()
-    delaysum = bf.DelaySum()
-    if mode == "doa":
-        srpphat_or_gccphat = bf.SrpPhat(mics=bf.get_mic_locations(channels=channels))
-    elif mode == "tdoa":
-        srpphat_or_gccphat = bf.GccPhat()
-    else:
-        raise NotImplementedError("Specify an implemented method of beamforming.")
+        self.speech_pipeline = []
+        for component in self.components:
+            mapping[component][0]()
+            self.speech_pipeline.append(mapping[component])
 
-    initialised_beamformer = (stft, istft, covariance, delaysum, srpphat_or_gccphat)
-    return initialised_beamformer
+    def run_inference(self, target_1d_array, echo_cancel_1d_array=(), transcript_fname="demo"):
+        if self.aec_model and (len(echo_cancel_1d_array) > 0):
+            target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
+        if self.separator_model:
+            target_1d_array = self._do_separating(target_1d_array)
+        if self.enhancer_model:
+            target_1d_array = self._do_enhancing(target_1d_array)
 
-def do_beamforming(audio_array_2d, mode, channels, initialised_beamformer):
-    audio_tensor = torch.FloatTensor(audio_array_2d.T).unsqueeze(0)
-    beamformed_tensor = bf.delaysum_beamforming(audio_tensor, mode=mode, channels=channels,
-                                                pre_instantiated=initialised_beamformer)
-    beamformed_array = beamformed_tensor.squeeze(dim=(0, -1)).numpy()
-    return beamformed_array
+        transcript_object = self._do_asr(target_1d_array)
 
-def initialise_aec(model_size=512):
-    """
-    Set up the DTLN AEC
-    :param model_size: int - must be 128, 256 or 512
-    :return: interpreter1, interpreter2 - these will be used by the do_aec function for performing AEC
-    """
-    print("Initialising AEC model.")
-    if model_size not in [128, 256, 512]:
-        raise ValueError("AEC component: model_size must be 128, 256, or 512.")
-    aec_pretrained_fpath = f"../DTLN-aec-main/pretrained_models/dtln_aec_{model_size}"
-    interpreter1, interpreter2 = run_aec.initialise_interpreters(model=aec_pretrained_fpath)
-    print("AEC model initialised.")
-    return interpreter1, interpreter2
+        timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
+                                                                  filepath=None,
+                                                                  segment_level=True,
+                                                                  word_level=False)
 
-def do_aec(interpreter1, interpreter2, wall_mic_array_1d, server_closetalk_array_1d):
-    """
-    :param interpreter1: interpreter1 obtained from calling initialise_aec
-    :param interpreter2: interpreter2 obtained from calling initialise_aec
-    :param wall_mic_array_1d:
-    :param server_closetalk_array_1d:
-    :return: 1d-array after AEC
-    """
-    if len(server_closetalk_array_1d.shape) > 1:
-        server_closetalk_array_1d = server_closetalk_array_1d.squeeze(0)
+        with open(f"{transcript_fname}.txt", "w") as f_obj:
+            f_obj.write(timestamped_transcript_str)
 
-    return run_aec.process_audio(interpreter1, interpreter2, wall_mic_array_1d, server_closetalk_array_1d)
+        return timestamped_transcript_str
 
-def initialise_enhancing():
-    print("Initialising enhancer model.")
-    # model belongs to <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
-    model = separator.from_hparams(source="speechbrain/sepformer-dns4-16k-enhancement",
-                                   savedir="audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement")
-    print("Enhancer model initialised.")
-    return model
+    def _initialise_aec(self):
+        print("Initialising AEC model.")
+        if self.aec_size not in [128, 256, 512]:
+            raise ValueError("AEC component: model_size must be 128, 256, or 512.")
+        aec_pretrained_fpath = f"../DTLN-aec-main/pretrained_models/dtln_aec_{self.aec_size}"
+        interpreter1, interpreter2 = run_aec.initialise_interpreters(model=aec_pretrained_fpath)
+        print("AEC model initialised.")
+        self.aec_model = (interpreter1, interpreter2)
 
-def do_enhancing(audio_array_1d, model, normalise=True):
-    # TODO: extend this function to work with audio as file in addition to as a numpy array
-    audio_tensor = torch.FloatTensor(audio_array_1d).unsqueeze(0)
-    # audio_tensor has size (1, n_samples)
-    est_sources = model.separate_batch(audio_tensor)
-    # est_sources has size (1, n_samples, 1)
-    enhanced_array = est_sources[:, :, 0].detach().cpu().numpy().squeeze(0)
-    # enhanced_array has shape (n_samples,)
+    def _initialise_separator(self):
+        # TODO: code to set up source separation model goes here
+        pass
 
-    # check for clipping - adapted from DTLN-aec code
-    if normalise and (np.max(enhanced_array) > 1):
-        enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
-    return enhanced_array
+    def _initialise_enhancer(self):
+        print("Initialising enhancer model.")
+        # model belongs to <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
+        # TODO: query if we should be using this model for "enhancement" rather than "separation"
+        #  maybe an alternative: https://github.com/facebookresearch/denoiser
+        self.enhancer_model = separator.from_hparams(source="speechbrain/sepformer-dns4-16k-enhancement",
+                                                     savedir="audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement")
+        print("Enhancer model initialised.")
 
-def initialise_asr(model_name="distil-large-v2", long_transcription=False, batch_input=False):
-    # set long_transcription to True if the intended audio/file for inference is >30 seconds
-    # set batch_input to True if intending to use the model on batches of audio or files
-    if "distil" in model_name:
+    def _initialise_asr(self, simple_stable_ts=True):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-        model_id = "distil-whisper/" + model_name
-        model = AutoModelForSpeechSeq2Seq.from_pretrained(
-            model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-        )
-        model.to(device)
-        processor = AutoProcessor.from_pretrained(model_id)
+        model_size = self.asr_model_name.split("-")[1]
 
-        configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
-                          "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
-        if long_transcription:
-            configurations["chunk_length_s"] = 15
-        if batch_input:
-            configurations["batch_size"] = 16
+        if simple_stable_ts:
+            self.asr_model = stable_whisper.load_hf_whisper(model_size)
 
-        return pipeline("automatic-speech-recognition", **configurations)
+        else:
+            if "distil" in self.asr_model_name:
+                model_id = "distil-whisper/" + self.asr_model_name
+            else:
+                model_id = "openai/" + self.asr_model_name
+            model = AutoModelForSpeechSeq2Seq.from_pretrained(
+                model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+            )
+            model.to(device)
+            processor = AutoProcessor.from_pretrained(model_id)
 
-    else:
-        torch_dtype = "fp16" if torch.cuda.is_available() else "int8"
-        # fallback to faster-whisper, not yet successfully implemented
+            configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
+                              "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
+            if self.long_transcription:
+                configurations["chunk_length_s"] = 15
+            if self.batch_input:
+                configurations["batch_size"] = 16
 
-        # fyi: CPUs can't seem to work on float16 faster-whisper
-        # see https://github.com/SYSTRAN/faster-whisper/issues/65
-        print("Initialising ASR model.")
-        asr_model = None
-        # asr_model = WhisperModel(model_name, compute_type=torch_dtype)
-        print("ASR model initialised.")
-        return asr_model
-def do_asr(audio_array_1d_or_fpath, asr_model, distil_whisper=True):
-    # note for ref: faster-whisper WhisperModel's transcribe method can process audio either as file or as array
-    # TODO: distil_whisper=False was intended for faster-whisper but needs fixing - this is currently resulting in
-    #  "OMP: Error #15: Initializing libomp.dylib, but found libiomp5.dylib already initialized."
+            self.asr_model = stable_whisper.load_hf_whisper(model_size,
+                                                            device=device,
+                                                            flash=False,
+                                                            pipeline=pipeline("automatic-speech-recognition", **configurations))
 
-    if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
-        audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
+    def _do_aec(self, target_array_1d, echo_array_1d):
+        if len(target_array_1d.shape) > 1:
+            target_array_1d = target_array_1d.squeeze(0)
+        if len(echo_array_1d.shape) > 1:
+            echo_array_1d = echo_array_1d.squeeze(0)
 
-    if distil_whisper:
-        return asr_model(audio_array_1d_or_fpath, return_timestamps=True)
-    else:
-        return asr_model.transcribe(audio_array_1d_or_fpath)
+        return run_aec.process_audio(*self.aec_model, target_array_1d, echo_array_1d)
 
-def first_beamforming_then_aec(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
-    post_beamform_array = do_beamforming(audio_array_nd, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
-    return do_aec(interpreter1, interpreter2, post_beamform_array, server_closetalk)
+    def _do_enhancing(self, audio_array_1d):
+        audio_tensor = torch.FloatTensor(audio_array_1d).unsqueeze(0)
+        # audio_tensor has size (1, n_samples)
+        est_sources = self.enhancer_model.separate_batch(audio_tensor)
+        # est_sources has size (1, n_samples, 1)
+        enhanced_array = est_sources[:, :, 0].detach().cpu().numpy().squeeze(0)
+        # enhanced_array has shape (n_samples,)
 
-def first_aec_then_beamforming(interpreter1, interpreter2, audio_array_nd, server_closetalk, initialised_beamformer):
-    # breaking the wall_mics apart and then run aec on each of these
-    post_aec_array = np.array(
-        [do_aec(interpreter1, interpreter2, array_1d, server_closetalk)
-         for array_1d in audio_array_nd]
-    )
-    # it would be good to parallelise this, but not sure if it could be done.
-    # alternatively, we need a good multichannel acoustic echo cancellation library
+        # check for clipping - adapted from DTLN-aec code
+        if self.normalise_after_enhancing and (np.max(enhanced_array) > 1):
+            enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
+        return enhanced_array
 
-    return do_beamforming(post_aec_array, "doa", channels=(4, 5, 6, 7, 8), initialised_beamformer=initialised_beamformer)
+    def _do_separating(self, audio_array):
+        # TODO: implement
+        return audio_array
 
+    def _do_asr(self, audio_array_1d_or_fpath):
+        # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
+        if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
+            audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
 
-
-
-
-
+        if "distil" in self.asr_model_name:
+            return self.asr_model(audio_array_1d_or_fpath, return_timestamps=True)
+        else:
+            # https://github.com/jianfch/stable-ts/tree/main
+            return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
 def main():
-    pass
+    wall_mics, customer_closetalk, server_closetalk = \
+        get_test_sample("20240201_104809_scenario_10",
+                        timeslice=(0, 0),
+                        mics=("wall_mics", "customer_closetalk", "server_closetalk"))
+
+    wall_mic, customer_closetalk, server_closetalk = wall_mics[0, :], \
+                                                     customer_closetalk.squeeze(0), \
+                                                     server_closetalk.squeeze(0)
+
+    server_side_pipeline = AudioPipeline(components=("aec", "asr"))
+
+    server_transcript = server_side_pipeline.run_inference(target_1d_array=server_closetalk,
+                                                           echo_cancel_1d_array=customer_closetalk,
+                                                           transcript_fname="server_side_demo")
+
+    customer_side_pipeline = AudioPipeline(components=("aec", "asr"))
+
+    customer_transcript = customer_side_pipeline.run_inference(target_1d_array=wall_mic,
+                                                               echo_cancel_1d_array=server_closetalk,
+                                                               transcript_fname="customer_side_demo")
+
+    print(server_transcript)
+    print(customer_transcript)
+
 
 if __name__ == "__main__":
     main()
-
