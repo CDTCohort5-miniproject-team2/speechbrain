@@ -1,0 +1,33 @@
+S: We're now recording scenario 10,
+S: is that right?
+S: Yep.
+S: I'm going to start now.
+S: Welcome to Chefbook, can I take your order please?
+C: Uh, yeah, hi, um,
+C: can I have a veggie wrap, please?
+C: Uh,
+S: Yes, no problem.
+S: Would you like that as a combo?
+C: no, just on its own,
+C: can I ask, how many calories is in a veggie wrap?
+C: Okay.
+S: The wrap on its
+C: In that case, could I have a cheeseburger as well?
+C: And how many calories is that?
+C: Just
+C: wondering.
+C: Okay,
+C: cool.
+C: Okay.
+C: And can you maybe add
+C: bacon?
+C: Add more bacon to it.
+C: Maybe two.
+C: And
+C: lastly, can I have a Sprite Zero, please?
+S: own is 365 calories. Yeah, no problem. About 280 calories. calories yeah of course just one slice or would you like more would you like ice with that?
+S: Is there anything else we can get for you today?
+S: That will be £14.80.
+S: Come to the next window please.
+S: Thank you.
+C: And make that regular? Yes please. Now that's it, thank you. Brilliant, thank you.

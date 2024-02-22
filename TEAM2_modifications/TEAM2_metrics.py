@@ -52,9 +52,12 @@ def _synchronise_target_and_estimate(reference_audio, processed_audio, mode="sim
     return reference_audio, processed_audio
 
 def compute_wer(preds, targets):
+    # https: // speechbrain.readthedocs.io / en / latest / API / speechbrain.utils.edit_distance.html
     wer = collections.Counter()
     # compute wer(pred, target)
     # compute batch wer(preds, targets)
+
+
 
 
 def signal_metrics_test():
