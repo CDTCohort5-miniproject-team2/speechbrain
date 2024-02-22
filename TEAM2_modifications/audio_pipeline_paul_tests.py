@@ -62,7 +62,8 @@ class AudioPipeline:
             mapping[component][0]()
             self.speech_pipeline.append(mapping[component])
 
-    def run_inference(self, target_1d_array, echo_cancel_1d_array=(), transcript_fname="demo", initial_prompts = False):
+    def run_inference(self, target_1d_array, prompts, echo_cancel_1d_array=(), transcript_fname="demo"):
+        print(prompts)
         if self.aec_model and (len(echo_cancel_1d_array) > 0):
             target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
         if self.separator_model:
@@ -70,7 +71,7 @@ class AudioPipeline:
         if self.enhancer_model:
             target_1d_array = self._do_enhancing(target_1d_array)
 
-        transcript_object = self._do_asr(target_1d_array, initial_prompts)
+        transcript_object = self._do_asr(target_1d_array, prompts)
 
         timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
                                                                   filepath=None,
@@ -160,7 +161,7 @@ class AudioPipeline:
         # TODO: implement
         return audio_array
 
-    def _do_asr(self, audio_array_1d_or_fpath, initial_prompts = False):
+    def _do_asr(self, audio_array_1d_or_fpath, prompts):
         # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
@@ -168,8 +169,13 @@ class AudioPipeline:
         if "distil" in self.asr_model_name:
             return self.asr_model(audio_array_1d_or_fpath, return_timestamps=True)
         else:
-            # https://github.com/jianfch/stable-ts/tree/main
-            return self.asr_model.transcribe(audio_array_1d_or_fpath, initial_prompts = initial_prompts)
+            if prompts:
+                print("Implementing Prompt engineering")
+                # https://github.com/jianfch/stable-ts/tree/main
+                return self.asr_model.transcribe(audio_array_1d_or_fpath, initial_prompt = prompts)
+            else: 
+                # https://github.com/jianfch/stable-ts/tree/main
+                return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
 def main():
     wall_mics, customer_closetalk, server_closetalk = \
@@ -185,14 +191,15 @@ def main():
 
     server_transcript = server_side_pipeline.run_inference(target_1d_array=server_closetalk,
                                                            echo_cancel_1d_array=customer_closetalk,
-                                                           transcript_fname="server_side_demo")
+                                                           transcript_fname="server_side_demo", 
+                                                           prompts = "ShefBurger")
 
     customer_side_pipeline = AudioPipeline(components=("aec", "asr"))
 
     customer_transcript = customer_side_pipeline.run_inference(target_1d_array=wall_mic,
                                                                echo_cancel_1d_array=server_closetalk,
                                                                transcript_fname="customer_side_demo",
-                                                               initial_prompts = "Fanta, Mambo Combo")
+                                                               prompts = "Mambo Combo")
 
     print(server_transcript)
     print(customer_transcript)
