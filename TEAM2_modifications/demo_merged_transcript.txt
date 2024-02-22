@@ -1,33 +1,41 @@
 S: We're now recording scenario 10,
 S: is that right?
-S: Yep.
-S: I'm going to start now.
-S: Welcome to Chefbook, can I take your order please?
-C: Uh, yeah, hi, um,
-C: can I have a veggie wrap, please?
-C: Uh,
+S: Yep, I'm gonna start now.
+S: Welcome to Sheffield, can I take your order please?
+C: Yeah, hi.
+C: Could I have a veggie wrap,
 S: Yes, no problem.
 S: Would you like that as a combo?
-C: no, just on its own,
-C: can I ask, how many calories is in a veggie wrap?
+C: please?
+C: Now, just on its own,
+C: could I ask how many calories is in a veggie wrap?
+S: The rap on its own is 365 calories.
 C: Okay.
-S: The wrap on its
-C: In that case, could I have a cheeseburger as well?
+C: In that case,
+C: could I have a
+C: cheeseburger as well?
+S: Yeah, no problem.
 C: And how many calories is that?
-C: Just
-C: wondering.
-C: Okay,
-C: cool.
+C: Just one gram.
+C: Okay, cool.
+S: About 280 calories. calories
 C: Okay.
-C: And can you maybe add
-C: bacon?
-C: Add more bacon to it.
-C: Maybe two.
-C: And
-C: lastly, can I have a Sprite Zero, please?
-S: own is 365 calories. Yeah, no problem. About 280 calories. calories yeah of course just one slice or would you like more would you like ice with that?
+C: And can you maybe...
+S: yeah of
+S: course
+C: Maybe add bacon, and add more bacon to it.
+S: and just one slice or would you like more
+C: Maybe two, maybe two.
+C: And lastly, can I have a Sprite Zero please?
+C: And make that regular.
+S: would you like ice with that?
+C: Yes, please.
 S: Is there anything else we can get for you today?
-S: That will be £14.80.
+C: Now that's it.
+C: Thank you.
+S: That will be
+S: £14.80.
 S: Come to the next window please.
+C: Brilliant.
+C: Thank you.
 S: Thank you.
-C: And make that regular? Yes please. Now that's it, thank you. Brilliant, thank you.

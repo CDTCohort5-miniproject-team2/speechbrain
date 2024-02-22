@@ -1,25 +1,35 @@
-2000	5160	We're now recording scenario 10,
+2020	5340	We're now recording scenario 10,
 
-5160	6000	is that right?
+5460	6200	is that right?
 
-6000	6300	Yep.
+6200	8220	Yep, I'm gonna start now.
 
-6300	7392	I'm going to start now.
+8580	10500	Welcome to Sheffield, can I take your order please?
 
-7904	10720	Welcome to Chefbook, can I take your order please?
+16060	17360	Yes, no problem.
 
-16032	16880	Yes, no problem.
+17360	18700	Would you like that as a combo?
 
-16880	18688	Would you like that as a combo?
+23800	26200	The rap on its own is 365 calories.
 
-18880	24280	The wrap on its
+33480	34400	Yeah, no problem.
 
-49920	66580	own is 365 calories. Yeah, no problem. About 280 calories. calories yeah of course just one slice or would you like more would you like ice with that?
+38240	42480	About 280 calories. calories
 
-71620	73408	Is there anything else we can get for you today?
+46460	46880	yeah of
 
-75000	77040	That will be £14.80.
+49520	50020	course
 
-77040	78680	Come to the next window please.
+50660	55040	and just one slice or would you like more
 
-79680	80060	Thank you.
+65580	66460	would you like ice with that?
+
+71660	73300	Is there anything else we can get for you today?
+
+75060	75640	That will be
+
+76260	77500	£14.80.
+
+77500	78580	Come to the next window please.
+
+79720	80080	Thank you.

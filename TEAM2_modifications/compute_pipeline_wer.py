@@ -1,11 +1,11 @@
-import audio_pipeline
+import audio_pipeline_paul_tests
 import transcript_pipeline
 import prepare_kroto_data
 import librosa
 from speechbrain.utils.edit_distance import accumulatable_wer_stats
 import collections
 
-customer_speech_pipeline = audio_pipeline.AudioPipeline()
+customer_speech_pipeline = audio_pipeline_paul_tests.AudioPipeline()
 
 def parse_folder(folder_name="01_02_24"):
     kroto_data = prepare_kroto_data.KrotoData(f"test_kroto_data/{folder_name}")
