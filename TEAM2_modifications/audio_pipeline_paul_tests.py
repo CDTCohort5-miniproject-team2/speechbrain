@@ -76,10 +76,10 @@ class AudioPipeline:
     def run_inference(self, target_1d_array, prompts, echo_cancel_1d_array=(), transcript_fname="demo"):
         """
         runs inference on a target audio array
-        :param target_1d_array: 
-        :param prompts: string - 
-        :param echo_cancel_1d_array:
-        :param transcript_fname:
+        :param target_1d_array: one dimensional array - containing target audio signal to perform AEC on
+        :param prompts: string - prompts to use as input into the Whisper model e.g., "Mambo Combo"
+        :param echo_cancel_1d_array: one dimensional array - containing the audio signal to remove from target_1d_array 
+        :param transcript_fname: string - according to the name of the output file containing the transcript e.g., "demo"
         """
         if self.aec_model and (len(echo_cancel_1d_array) > 0):
             target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
