@@ -23,8 +23,8 @@ kroto_data = prepare_kroto_data.KrotoData(CATALOGUE[1])
 def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
     """
     Get some sample audio arrays for testing
-    :param audio_fstem:
-    :param timeslice:
+    :param audio_fstem: string - according to the stem of the file name, e.g., "20240201_114729_scenario_28"
+    :param timeslice: tuple of numerical values - according to the section of the audiofile we want e.g., (2.0, 13.6)
     :param mics: tuple of strings - according to channel mapping, e.g. ("wall_mics", "server_closetalk")
     :return: 2D arrays in the specific order
     """
@@ -36,6 +36,7 @@ def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 1
     return mic_arrays
 
 class AudioPipeline:
+    
     def __init__(self,
                  components=("aec", "asr"),
                  aec_size=512,
@@ -43,6 +44,15 @@ class AudioPipeline:
                  long_transcription=True,
                  batch_input=False,
                  normalise_after_enhancing=True):
+        """ 
+        Initiates the class AudioPipeline
+        :param components: a set of strings - according to the desired components of the audio pipeline e.g., ("aec", "asr")
+        :param aec_size: integer - according to the desired model size e.g., 512
+        :param asr_model_name: string - according to the desired Whisper ASR model e.g., "whisper-medium.en"
+        :param long_transcription: boolean
+        :param batch_input: boolean
+        :param normalise_after_enhancing: boolean
+        """
         self.components = components
         self.aec_size = aec_size
         self.long_transcription = long_transcription
@@ -50,6 +60,7 @@ class AudioPipeline:
         self.asr_model_name = asr_model_name
         self.normalise_after_enhancing = normalise_after_enhancing
 
+        # Specifies the functions that should be called when these components are specified
         self.aec_model, self.separator_model, self.enhancer_model, self.asr_model = None, None, None, None
         mapping = {"aec": (self._initialise_aec, self._do_aec),
                    "separator": (self._initialise_separator, self._do_separating),
@@ -63,7 +74,13 @@ class AudioPipeline:
             self.speech_pipeline.append(mapping[component])
 
     def run_inference(self, target_1d_array, prompts, echo_cancel_1d_array=(), transcript_fname="demo"):
-        print(prompts)
+        """
+        runs inference on a target audio array
+        :param target_1d_array: 
+        :param prompts: string - 
+        :param echo_cancel_1d_array:
+        :param transcript_fname:
+        """
         if self.aec_model and (len(echo_cancel_1d_array) > 0):
             target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
         if self.separator_model:
