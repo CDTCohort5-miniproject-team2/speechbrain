@@ -4,11 +4,10 @@ import numpy as np
 from speechbrain.pretrained import SepformerSeparation as separator
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import stable_whisper
-# NOTE TO TEAM: you will need to pip install optimum to use stable whisper
-
 import prepare_kroto_data
 
-sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
+# Importing run_aec
+sys.path.append("../DTLN-aec-main")
 print("Importing run_aec")
 import run_aec
 print("run_aec imported.")
@@ -30,8 +29,9 @@ def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 1
     """
     mic_arrays = []
     for mic_name in mics:
-        mic_array = kroto_data.get_demo_audio_array(audio_fname=audio_fstem+".wav", downsampled=True,
-                                                         timeslice=timeslice, channel_name=mic_name)
+        mic_array = kroto_data.get_demo_audio_array(audio_fname=audio_fstem+".wav", 
+                                                    timeslice=timeslice, 
+                                                    channel_name=mic_name)
         mic_arrays.append(mic_array)
     return mic_arrays
 
@@ -49,9 +49,9 @@ class AudioPipeline:
         :param components: a set of strings - according to the desired components of the audio pipeline e.g., ("aec", "asr")
         :param aec_size: integer - according to the desired model size e.g., 512
         :param asr_model_name: string - according to the desired Whisper ASR model e.g., "whisper-medium.en"
-        :param long_transcription: boolean
-        :param batch_input: boolean
-        :param normalise_after_enhancing: boolean
+        :param long_transcription: boolean - determines the chunking size of the processed audio files
+        :param batch_input: boolean - NOTE please explain what batching is
+        :param normalise_after_enhancing: boolean - whether or not enhanced array should be normalised
         """
         self.components = components
         self.aec_size = aec_size
@@ -60,7 +60,7 @@ class AudioPipeline:
         self.asr_model_name = asr_model_name
         self.normalise_after_enhancing = normalise_after_enhancing
 
-        # Specifies the functions that should be called when these components are specified
+        # Calls the relevant functions depending on the specified components
         self.aec_model, self.separator_model, self.enhancer_model, self.asr_model = None, None, None, None
         mapping = {"aec": (self._initialise_aec, self._do_aec),
                    "separator": (self._initialise_separator, self._do_separating),
@@ -73,34 +73,44 @@ class AudioPipeline:
             mapping[component][0]()
             self.speech_pipeline.append(mapping[component])
 
-    def run_inference(self, target_1d_array, prompts, echo_cancel_1d_array=(), transcript_fname="demo"):
+    def run_inference(self, target_1d_array, echo_cancel_1d_array=(), transcript_fname="demo", enhancer_or_seperator_first = "enhancer"):
         """
         runs inference on a target audio array
         :param target_1d_array: one dimensional array - containing target audio signal to perform AEC on
-        :param prompts: string - prompts to use as input into the Whisper model e.g., "Mambo Combo"
         :param echo_cancel_1d_array: one dimensional array - containing the audio signal to remove from target_1d_array 
-        :param transcript_fname: string - according to the name of the output file containing the transcript e.g., "demo"
+        :param transcript_fname: string - name of output file containing the transcript e.g., "demo"
         """
         if self.aec_model and (len(echo_cancel_1d_array) > 0):
             target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
-        if self.separator_model:
-            target_1d_array = self._do_separating(target_1d_array)
-        if self.enhancer_model:
-            target_1d_array = self._do_enhancing(target_1d_array)
+        
+        if enhancer_or_seperator_first == "enhancer":
+            if self.enhancer_model:
+                target_1d_array = self._do_enhancing(target_1d_array)
+            if self.separator_model:
+                target_1d_array = self._do_separating(target_1d_array)
+        
+        if enhancer_or_seperator_first == "seperator":
+            if self.separator_model:
+                target_1d_array = self._do_separating(target_1d_array)
+            if self.enhancer_model:
+                target_1d_array = self._do_enhancing(target_1d_array)
 
-        transcript_object = self._do_asr(target_1d_array, prompts)
+        transcript_object = self._do_asr(target_1d_array)
 
         timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
                                                                   filepath=None,
                                                                   segment_level=True,
                                                                   word_level=False)
 
-        with open(f"{transcript_fname}.txt", "w") as f_obj:
+        with open(f"{transcript_fname}.txt", "w", encoding="utf-8") as f_obj:
             f_obj.write(timestamped_transcript_str)
 
         return timestamped_transcript_str
 
     def _initialise_aec(self):
+        """
+        Initialises pretrained Acoustic Echo Cancellation Model from https://github.com/breizhn/DTLN-aec.git
+        """
         print("Initialising AEC model.")
         if self.aec_size not in [128, 256, 512]:
             raise ValueError("AEC component: model_size must be 128, 256, or 512.")
@@ -114,6 +124,10 @@ class AudioPipeline:
         pass
 
     def _initialise_enhancer(self):
+        """"
+        Initialise pretrained enhancer model from <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
+        """
+
         print("Initialising enhancer model.")
         # model belongs to <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
         # TODO: query if we should be using this model for "enhancement" rather than "separation"
@@ -123,6 +137,11 @@ class AudioPipeline:
         print("Enhancer model initialised.")
 
     def _initialise_asr(self, simple_stable_ts=True):
+        """
+        Load the pretrained model from Whisper Hugging face e.g., Whisper large V3 (https://huggingface.co/openai/whisper-large-v3)
+        simple_stable_ts: Boolean - NOTE: please explain what happens if this argument were false
+        """
+
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
         model_size = self.asr_model_name.split("-")[1]
@@ -178,7 +197,7 @@ class AudioPipeline:
         # TODO: implement
         return audio_array
 
-    def _do_asr(self, audio_array_1d_or_fpath, prompts):
+    def _do_asr(self, audio_array_1d_or_fpath):
         # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
@@ -186,13 +205,8 @@ class AudioPipeline:
         if "distil" in self.asr_model_name:
             return self.asr_model(audio_array_1d_or_fpath, return_timestamps=True)
         else:
-            if prompts:
-                print("Implementing Prompt engineering")
-                # https://github.com/jianfch/stable-ts/tree/main
-                return self.asr_model.transcribe(audio_array_1d_or_fpath, initial_prompt = prompts)
-            else: 
-                # https://github.com/jianfch/stable-ts/tree/main
-                return self.asr_model.transcribe(audio_array_1d_or_fpath)
+            # https://github.com/jianfch/stable-ts/tree/main
+            return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
 def main():
     wall_mics, customer_closetalk, server_closetalk = \
@@ -208,15 +222,15 @@ def main():
 
     server_transcript = server_side_pipeline.run_inference(target_1d_array=server_closetalk,
                                                            echo_cancel_1d_array=customer_closetalk,
-                                                           transcript_fname="server_side_demo", 
-                                                           prompts = "ShefBurger")
+                                                           transcript_fname="server_side_demo",
+                                                           enhancer_or_seperator_first = "enhancer")
 
     customer_side_pipeline = AudioPipeline(components=("aec", "asr"))
 
     customer_transcript = customer_side_pipeline.run_inference(target_1d_array=wall_mic,
                                                                echo_cancel_1d_array=server_closetalk,
                                                                transcript_fname="customer_side_demo",
-                                                               prompts = "Mambo Combo")
+                                                               enhancer_or_seperator_first = "enhancer")
 
     print(server_transcript)
     print(customer_transcript)
