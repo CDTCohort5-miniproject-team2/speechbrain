@@ -51,6 +51,7 @@ class AudioPipeline:
         self.normalise_after_enhancing = normalise_after_enhancing
 
         self.aec_model, self.separator_model, self.enhancer_model, self.asr_model = None, None, None, None
+
         mapping = {"aec": (self._initialise_aec, self._do_aec),
                    "separator": (self._initialise_separator, self._do_separating),
                    "enhancer": (self._initialise_enhancer, self._do_enhancing),
@@ -58,9 +59,33 @@ class AudioPipeline:
                    }
 
         self.speech_pipeline = []
-        for component in self.components:
-            mapping[component][0]()
-            self.speech_pipeline.append(mapping[component])
+        for component_name in self.components:
+            mapping[component_name][0]()
+            self.speech_pipeline.append((component_name, mapping[component_name][1]))
+
+    def run_inference_beta(self, target_array, echo_cancel_array=None):
+        # TODO: not yet ready for use
+        timestamped_transcript_str = None
+
+        for component_name, component_function in self.speech_pipeline:
+            if component_name == "aec":
+                target_array = self._do_aec(target_array, echo_cancel_array)
+
+            elif component_name == "separator":
+                # TODO: confirm if this is correct given ssspy
+                target_array = self._do_separating(target_array)
+
+            elif component_name == "separator":
+                target_array = self._do_enhancing(target_array)
+
+            elif component_name == "asr":
+                transcript_object = self._do_asr(target_array)
+
+                timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
+                                                                          filepath=None,
+                                                                          segment_level=True,
+                                                                          word_level=False)
+        return target_array, timestamped_transcript_str
 
     def run_inference(self, target_1d_array, echo_cancel_1d_array=(), transcript_fname="demo"):
         if self.aec_model and (len(echo_cancel_1d_array) > 0):
@@ -82,6 +107,7 @@ class AudioPipeline:
 
         return timestamped_transcript_str
 
+
     def _initialise_aec(self):
         print("Initialising AEC model.")
         if self.aec_size not in [128, 256, 512]:
@@ -98,8 +124,6 @@ class AudioPipeline:
     def _initialise_enhancer(self):
         print("Initialising enhancer model.")
         # model belongs to <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
-        # TODO: query if we should be using this model for "enhancement" rather than "separation"
-        #  maybe an alternative: https://github.com/facebookresearch/denoiser
         self.enhancer_model = separator.from_hparams(source="speechbrain/sepformer-dns4-16k-enhancement",
                                                      savedir="audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement")
         print("Enhancer model initialised.")
@@ -112,55 +136,69 @@ class AudioPipeline:
         if simple_stable_ts:
             self.asr_model = stable_whisper.load_hf_whisper(model_size)
 
+        # else:
+        #     if "distil" in self.asr_model_name:
+        #         model_id = "distil-whisper/" + self.asr_model_name
+        #     else:
+        #         model_id = "openai/" + self.asr_model_name
+        #     model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        #         model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+        #     )
+        #     model.to(device)
+        #     processor = AutoProcessor.from_pretrained(model_id)
+        #
+        #     configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
+        #                       "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
+        #     if self.long_transcription:
+        #         configurations["chunk_length_s"] = 15
+        #     if self.batch_input:
+        #         configurations["batch_size"] = 16
+        #
+        #     self.asr_model = stable_whisper.load_hf_whisper(model_size,
+        #                                                     device=device,
+        #                                                     flash=False,
+        #                                                     pipeline=pipeline("automatic-speech-recognition", **configurations))
+
+    def _do_aec(self, target_array_nd, echo_array_nd, batch=False):
+        # NOTE TO TEAM2: our AEC doesn't support batch-processing, we will need to manually configure this,
+        if batch:
+            results = np.zeros(target_array_nd.shape)
+            for i, (target_array, echo_array) in enumerate(zip(target_array_nd, echo_array_nd)):
+                results[i] = run_aec.process_audio(*self.aec_model, target_array, echo_array)
+            return results  # 2D array
+
         else:
-            if "distil" in self.asr_model_name:
-                model_id = "distil-whisper/" + self.asr_model_name
-            else:
-                model_id = "openai/" + self.asr_model_name
-            model = AutoModelForSpeechSeq2Seq.from_pretrained(
-                model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-            )
-            model.to(device)
-            processor = AutoProcessor.from_pretrained(model_id)
+            if len(target_array_nd.shape) > 1:
+                target_array_nd = target_array_nd.squeeze(0)
+            if len(echo_array_nd.shape) > 1:
+                echo_array_nd = echo_array_nd.squeeze(0)
 
-            configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
-                              "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
-            if self.long_transcription:
-                configurations["chunk_length_s"] = 15
-            if self.batch_input:
-                configurations["batch_size"] = 16
+            return run_aec.process_audio(*self.aec_model, target_array_nd, echo_array_nd)  # 1D array
 
-            self.asr_model = stable_whisper.load_hf_whisper(model_size,
-                                                            device=device,
-                                                            flash=False,
-                                                            pipeline=pipeline("automatic-speech-recognition", **configurations))
-
-    def _do_aec(self, target_array_1d, echo_array_1d):
-        if len(target_array_1d.shape) > 1:
-            target_array_1d = target_array_1d.squeeze(0)
-        if len(echo_array_1d.shape) > 1:
-            echo_array_1d = echo_array_1d.squeeze(0)
-
-        return run_aec.process_audio(*self.aec_model, target_array_1d, echo_array_1d)
-
-    def _do_enhancing(self, audio_array_1d):
-        audio_tensor = torch.FloatTensor(audio_array_1d).unsqueeze(0)
-        # audio_tensor has size (1, n_samples)
+    def _do_enhancing(self, audio_array, batch=False):
+        # currently takes either a 1D array (n_samples,), or 2D (n_batch, n_samples,) if batch=True
+        audio_tensor = torch.FloatTensor(audio_array)
+        if (not batch) and len(audio_array.shape > 1):
+            audio_tensor = torch.unsqueeze(audio_tensor, 0)
+        # audio_tensor has size (n_batch, n_samples)
         est_sources = self.enhancer_model.separate_batch(audio_tensor)
-        # est_sources has size (1, n_samples, 1)
-        enhanced_array = est_sources[:, :, 0].detach().cpu().numpy().squeeze(0)
-        # enhanced_array has shape (n_samples,)
+        # est_sources has size (n_batch, n_samples, 1)
+        enhanced_arrays = est_sources[:, :, 0].detach().cpu().numpy()
+        # enhanced_arrays has shape (n_batch, n_samples,)
 
-        # check for clipping - adapted from DTLN-aec code
-        if self.normalise_after_enhancing and (np.max(enhanced_array) > 1):
-            enhanced_array = enhanced_array / np.max(enhanced_array) * 0.99
-        return enhanced_array
+        for array_idx, _ in enumerate(enhanced_arrays):
+            # check for clipping - adapted from DTLN-aec code
+            if self.normalise_after_enhancing and (np.max(enhanced_arrays[array_idx]) > 1):
+                enhanced_arrays[array_idx] = enhanced_arrays[array_idx] / np.max(enhanced_arrays[array_idx]) * 0.99
+        if not batch:
+            enhanced_arrays = enhanced_arrays.squeeze(0)
+        return enhanced_arrays
 
-    def _do_separating(self, audio_array):
+    def _do_separating(self, audio_array, batch=False):
         # TODO: implement
         return audio_array
 
-    def _do_asr(self, audio_array_1d_or_fpath):
+    def _do_asr(self, audio_array_1d_or_fpath, batch=False):
         # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)

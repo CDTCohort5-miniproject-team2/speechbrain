@@ -41,8 +41,6 @@ class Transcript:
         self.wer_ready_transcript = cleaned_words
 
 
-
-
     def merge_transcripts_chronologically(self, target_transcript_obj=None, save_fname=""):
         if not target_transcript_obj:
             return self.timestamped_lines
@@ -56,6 +54,8 @@ class Transcript:
                 f_obj.write("\n".join(master_transcript_lines))
 
         return master_transcript
+
+
 
 def main():
     demo_txt_file = "customer_side_demo.txt"

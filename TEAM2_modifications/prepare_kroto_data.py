@@ -95,7 +95,7 @@ def spell_check(list_of_lines):
     checker = SpellChecker()
     corrected_lines = []
 
-    # TODO: TEAM2 add to this word list here as you go, include british spellins
+    # TODO: TEAM2 add to this word list here as you go, include british spellings
     words_no_need_for_correction = ["whopper", "shwippy", "shwippes", "mambo", "shefburger",
                                     "smarties", "oreo", "fanta", "coca", "cola", "ll", "s", "aren", "isn", "t",
                                     "won", "sec", "didn", "doesn", "sec", "mo", "ve", "BBQ", "flavour", "flavours"]
@@ -229,7 +229,7 @@ class KrotoData:
         #  THAT WE NEED TO DISCUSS AND REMEDY
         print("Cleaning transcripts for WER metric.")
         half_words = re.compile(r"\w+-\s]")
-        punctuations = re.compile(r"[,.!?\-]+(\W|$)")
+        punctuations = re.compile(r"[,.!?;\-]+(\W|$)")
         with open("verbal_fillers.txt") as f_obj:
             filler_words_list = "|".join([line.strip() for line in f_obj])
 
