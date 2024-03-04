@@ -5,33 +5,30 @@ import sounddevice as sd
 from ssspy.bss.iva import AuxLaplaceIVA
 
 
-def load_and_make_stereo(audio_file_path):
-    audio_data, sample_rate = librosa.load(audio_file_path, sr=None)
-
-    shifted_audio = np.roll(audio_data, 1)
-    stereo_audio = np.array([audio_data, shifted_audio])
+def make_stereo(audio_array_1d):
+    shifted_audio = np.roll(audio_array_1d, 1)
+    stereo_audio = np.array([audio_array_1d, shifted_audio])
     return stereo_audio
 
 
-def _do_source_sep(audio_array):
+def do_source_sep(separator_model, audio_array):
     n_fft, hop_length = 4096, 2048
     window = "hann"
 
     _, _, spectrogram_mix = ss.stft(
-       audio_array,
-       window=window,
-       nperseg=n_fft,
-       noverlap=n_fft-hop_length
+        audio_array,
+        window=window,
+        nperseg=n_fft,
+        noverlap=n_fft - hop_length
     )
 
-    iva = AuxLaplaceIVA()
-    spectrogram_est = iva(spectrogram_mix)
+    spectrogram_est = separator_model(spectrogram_mix)
 
     _, waveform_est = ss.istft(
-       spectrogram_est,
-       window=window,
-       nperseg=n_fft,
-       noverlap=n_fft-hop_length
+        spectrogram_est,
+        window=window,
+        nperseg=n_fft,
+        noverlap=n_fft - hop_length
     )
 
     waveforms = []
@@ -42,16 +39,21 @@ def _do_source_sep(audio_array):
 
 
 def main(audio_file_path):
-    stereo_audio = load_and_make_stereo(audio_file_path)
-    waveforms = _do_source_sep(stereo_audio)
+    audio_data, sample_rate = librosa.load(audio_file_path, sr=None)
+    stereo_audio = make_stereo(audio_data)
+    iva = AuxLaplaceIVA()
+
+    waveforms = do_source_sep(iva, stereo_audio)
 
     for idx, waveform in enumerate(waveforms):
         print("Estimated source: {}".format(idx + 1))
-        sd.play(waveform.T, samplerate=16000)
+        sd.play(waveform.T, samplerate=sample_rate)
         sd.wait()
 
     return waveforms
 
 
 if __name__ == "__main__":
-    main('path_to_single_channel_aec_output_audio_file.wav')
+    main('/Users/yao/Downloads/DTLN-aec/results/c4_mic.wav')
+    # main('path_to_single_channel_aec_output_audio_file.wav')
+

@@ -5,8 +5,12 @@ from speechbrain.pretrained import SepformerSeparation as separator
 from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import stable_whisper
 # NOTE TO TEAM: you will need to pip install optimum to use stable whisper
-
+# !pip install ssspy
+from ssspy.bss.iva import AuxLaplaceIVA
+import scipy.signal as ss
+import librosa
 import prepare_kroto_data
+import source_sep
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
 print("Importing run_aec")
@@ -119,7 +123,7 @@ class AudioPipeline:
 
     def _initialise_separator(self):
         # TODO: code to set up source separation model goes here
-        pass
+        self.separator_model = AuxLaplaceIVA()
 
     def _initialise_enhancer(self):
         print("Initialising enhancer model.")
@@ -194,9 +198,10 @@ class AudioPipeline:
             enhanced_arrays = enhanced_arrays.squeeze(0)
         return enhanced_arrays
 
-    def _do_separating(self, audio_array, batch=False):
+    def _do_separating(self, audio_array_1d, batch=False):
         # TODO: implement
-        return audio_array
+        stereo_audio = source_sep.make_stereo(audio_array_1d)
+        return source_sep.do_source_sep(self.separator_model, stereo_audio)[1]  # return the second source
 
     def _do_asr(self, audio_array_1d_or_fpath, batch=False):
         # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
