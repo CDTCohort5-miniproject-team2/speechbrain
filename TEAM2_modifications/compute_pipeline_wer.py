@@ -76,6 +76,8 @@ def compute_wer(ground_truth, predicted):
     # %WER 21.13, 71 ref tokens,
     # %WER 205.49, 91 ref tokens ?? double check, discount for now
 
+    # Consider incorporating wer_summary(details_by_utterance) into this code???
+
 
 def main():
     parse_folder()
