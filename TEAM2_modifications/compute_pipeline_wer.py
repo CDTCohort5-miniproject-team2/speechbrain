@@ -1,6 +1,6 @@
 import audio_pipeline_paul_tests
 import transcript_pipeline
-import prepare_kroto_data
+from TEAM2_modifications.archived import prepare_kroto_data
 import librosa
 from speechbrain.utils.edit_distance import accumulatable_wer_stats
 import collections

@@ -24,10 +24,11 @@ def parse_jsonl_folder(jsonl_dirpath="kroto_data/jsonl_transcripts",
             os.mkdir(save_dir)
 
     with open(log_fpath) as f_obj:
-        already_parsed_jsonl = [item for line in f_obj.read() for item in line.strip()]
+        already_parsed_jsonl = [line.strip() for line in f_obj.readlines()]
 
     for jsonl_path in jsonl_dir.glob("*.jsonl"):
         if jsonl_path.stem in already_parsed_jsonl:
+            print(jsonl_path.stem, "is already parsed.")
             continue
 
         parse_jsonl(jsonl_path, save_to_folders=save_folders)
@@ -37,31 +38,34 @@ def parse_jsonl_folder(jsonl_dirpath="kroto_data/jsonl_transcripts",
             f_obj.write("\n")
 
 
-def parse_jsonl(jsonl_fpath, save_to_folders=()):
-    raw_transcript_dir, merged_gt_transcript_dir, server_gt_transcript_dir, customer_gt_transcript_dir = save_to_folders
+def parse_jsonl(jsonl_fpath, save_to_folders=(), check_spelling=False):
+    raw_transcript_dir, merged_gt_transcript_dir, server_gt_transcript_dir, customer_gt_transcript_dir = \
+        [Path(folder_str) for folder_str in save_to_folders]
 
     jsonl_df = pd.read_json(path_or_buf=jsonl_fpath, lines=True)
     for i, (_text, _meta, _path, _input_hash, _task_hash, _is_binary, _field_rows, _field_label, _field_id,
             _field_autofocus, _transcript, _orig_transcript, _view_id, _audio_spans, _answer, _timestamp,
             _annotator_id, _session_id) in jsonl_df.iterrows():
-        print(f"PARSING TRANSCRIPT FOR {_text}...")
+        print(f"Parsing {_text}")
         server_lines_idx, customer_lines_idx = [], []
 
         transcript_by_line = [line.strip() for line in re.split(r"([CS]: )", _transcript) if line.strip()]
+        transcript_by_line = [" ".join([line, transcript_by_line[i*2+1]]) for i, line in enumerate(transcript_by_line[0:-1:2])]
 
         raw_transcript_fpath = raw_transcript_dir/f"{_text}_raw_transcript.txt"
         with open(raw_transcript_fpath, "w") as f_obj:
             f_obj.write("\n".join(transcript_by_line))
 
         for i, line in enumerate(transcript_by_line):
-            if line == "S:":
+            if "S:" in line:
                 server_lines_idx.append(i)
-            elif line == "C:":
+            elif "C: " in line:
                 customer_lines_idx.append(i)
 
         transcript_by_line = [re.sub(r"[CS]: ", "", line) for line in transcript_by_line]
         transcript_by_line = normalise_for_WER(transcript_by_line)
-        spell_checked_transcript = spell_check(transcript_by_line)
+        if check_spelling:
+            transcript_by_line = spell_check(transcript_by_line)
 
         server_lines, customer_lines = [], []
         for i, line in enumerate(transcript_by_line):
@@ -75,7 +79,7 @@ def parse_jsonl(jsonl_fpath, save_to_folders=()):
         customer_transcript_fpath = customer_gt_transcript_dir/f"{_text}_gt_customer_transcript.txt"
 
         with open(merged_transcript_fpath, "w") as f_obj:
-            f_obj.write("\n".join(spell_checked_transcript))
+            f_obj.write("\n".join(transcript_by_line))
         with open(server_transcript_fpath, "w") as f_obj:
             f_obj.write("\n".join(server_lines))
         with open(customer_transcript_fpath, "w") as f_obj:
@@ -86,7 +90,6 @@ def spell_check(list_of_lines):
     checker = SpellChecker()
     corrected_lines = []
 
-    # TODO: TEAM2 add to this word list here as you go, include british spellings
     words_no_need_for_correction = ["whopper", "shwippy", "shwippes", "mambo", "shefburger",
                                     "smarties", "oreo", "fanta", "coca", "cola", "ll", "s", "aren", "isn", "t",
                                     "won", "sec", "didn", "doesn", "sec", "mo", "ve", "BBQ", "flavour", "flavours", "d"]
@@ -132,7 +135,7 @@ def spell_check(list_of_lines):
 
 def normalise_for_WER(list_of_lines):
     half_words = re.compile(r"\w+-\s]")
-    punctuations = re.compile(r"[,.!?\$£;\-]+(\W|$)")
+    punctuations = re.compile(r"[,.!?;\-]+(\W|$)")
     with open("verbal_fillers.txt") as f_obj:
         filler_words_list = "|".join([line.strip() for line in f_obj])
     filler_words = re.compile(r"(^|\W)(" + filler_words_list + r")($|\W)")
@@ -141,12 +144,16 @@ def normalise_for_WER(list_of_lines):
     for line in list_of_lines:
         line = re.sub(half_words, " ", line.strip().lower())
         line = re.sub(punctuations, " ", line)
+        line = re.sub(r"[$£,](\S)+", r"\1", line)  # rectify currencies and numbers with commas
         line = re.sub(filler_words, " ", line)
         new_line = []
         for _word in line.split():
             if any([char.isdigit() for char in _word]):
-                numbers_spelt_out = [num2words(int(num_word)) for num_word in _word.split(".")]
-                new_line.extend(numbers_spelt_out)
+                num_list = _word.split(".")
+                for num in num_list:
+                    numword_str = num2words(int(num)).replace(",", "")
+                    numword_str = numword_str.replace("-", "")
+                    new_line.append(numword_str)
             else:
                 new_line.append(_word)
         normalised_lines.append(" ".join(new_line))
@@ -195,10 +202,12 @@ class WhisperGeneratedTranscript:
                 f_obj.write("\n".join(self.merged_transcript_lines))
         if save_fpath_for_wer:
             with open(save_fpath_for_wer, "w") as f_obj:
-                f_obj.write("\n".join(self.merged_transcript_lines_normalised))
+                f_obj.write("\n".join(normalise_for_WER(self.merged_transcript_lines_normalised)))
 
 def main():
-    pass
+    # run main to parse jsonl files into transcripts
+    parse_jsonl_folder()
+
 
 if __name__ == "__main__":
     main()

@@ -2,14 +2,11 @@ import torch
 import sys
 import numpy as np
 from speechbrain.pretrained import SepformerSeparation as separator
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 import stable_whisper
 # NOTE TO TEAM: you will need to pip install optimum to use stable whisper
 # !pip install ssspy
 from ssspy.bss.iva import AuxLaplaceIVA
-import scipy.signal as ss
-import librosa
-import prepare_kroto_data
+from TEAM2_modifications.archived import prepare_kroto_data
 import source_sep
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
@@ -64,11 +61,10 @@ class AudioPipeline:
 
         self.speech_pipeline = []
         for component_name in self.components:
-            mapping[component_name][0]()
+            (mapping[component_name])[0]()
             self.speech_pipeline.append((component_name, mapping[component_name][1]))
 
     def run_inference_beta(self, target_array, echo_cancel_array=None):
-        # TODO: not yet ready for use
         timestamped_transcript_str = None
 
         for component_name, component_function in self.speech_pipeline:
@@ -76,7 +72,6 @@ class AudioPipeline:
                 target_array = self._do_aec(target_array, echo_cancel_array)
 
             elif component_name == "separator":
-                # TODO: confirm if this is correct given ssspy
                 target_array = self._do_separating(target_array)
 
             elif component_name == "separator":
@@ -122,7 +117,6 @@ class AudioPipeline:
         self.aec_model = (interpreter1, interpreter2)
 
     def _initialise_separator(self):
-        # TODO: code to set up source separation model goes here
         self.separator_model = AuxLaplaceIVA()
 
     def _initialise_enhancer(self):
@@ -139,30 +133,6 @@ class AudioPipeline:
 
         if simple_stable_ts:
             self.asr_model = stable_whisper.load_hf_whisper(model_size)
-
-        # else:
-        #     if "distil" in self.asr_model_name:
-        #         model_id = "distil-whisper/" + self.asr_model_name
-        #     else:
-        #         model_id = "openai/" + self.asr_model_name
-        #     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        #         model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-        #     )
-        #     model.to(device)
-        #     processor = AutoProcessor.from_pretrained(model_id)
-        #
-        #     configurations = {"model": model, "tokenizer": processor.tokenizer, "feature_extractor": processor.feature_extractor,
-        #                       "max_new_tokens": 128, "torch_dtype": torch_dtype, "device": device}
-        #     if self.long_transcription:
-        #         configurations["chunk_length_s"] = 15
-        #     if self.batch_input:
-        #         configurations["batch_size"] = 16
-        #
-        #     self.asr_model = stable_whisper.load_hf_whisper(model_size,
-        #                                                     device=device,
-        #                                                     flash=False,
-        #                                                     pipeline=pipeline("automatic-speech-recognition", **configurations))
-
     def _do_aec(self, target_array_nd, echo_array_nd, batch=False):
         # NOTE TO TEAM2: our AEC doesn't support batch-processing, we will need to manually configure this,
         if batch:
@@ -198,21 +168,16 @@ class AudioPipeline:
             enhanced_arrays = enhanced_arrays.squeeze(0)
         return enhanced_arrays
 
-    def _do_separating(self, audio_array_1d, batch=False):
-        # TODO: implement
+    def _do_separating(self, audio_array_1d):
         stereo_audio = source_sep.make_stereo(audio_array_1d)
         return source_sep.do_source_sep(self.separator_model, stereo_audio)[1]  # return the second source
 
-    def _do_asr(self, audio_array_1d_or_fpath, batch=False):
-        # TODO: WORKING WITH 1D ARRAY FOR NOW - CAN BE MODIFIED LATER TO TAKE BATCH INPUTS
+    def _do_asr(self, audio_array_1d_or_fpath):
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
 
-        if "distil" in self.asr_model_name:
-            return self.asr_model(audio_array_1d_or_fpath, return_timestamps=True)
-        else:
-            # https://github.com/jianfch/stable-ts/tree/main
-            return self.asr_model.transcribe(audio_array_1d_or_fpath)
+        # https://github.com/jianfch/stable-ts/tree/main
+        return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
 def main():
     wall_mics, customer_closetalk, server_closetalk = \
@@ -226,19 +191,19 @@ def main():
 
     server_side_pipeline = AudioPipeline(components=("aec", "asr"))
 
-    server_transcript = server_side_pipeline.run_inference(target_1d_array=server_closetalk,
-                                                           echo_cancel_1d_array=customer_closetalk,
-                                                           transcript_fname="server_side_demo")
+    server_output_audio, server_transcript = server_side_pipeline.run_inference_beta(target_array=server_closetalk,
+                                                                                     echo_cancel_array=customer_closetalk)
 
-    customer_side_pipeline = AudioPipeline(components=("aec", "asr"))
+    customer_side_pipeline = AudioPipeline(components=("aec", "enhancer", "separator", "asr"))
 
-    customer_transcript = customer_side_pipeline.run_inference(target_1d_array=wall_mic,
-                                                               echo_cancel_1d_array=server_closetalk,
-                                                               transcript_fname="customer_side_demo")
+    customer_output_audio, customer_transcript = customer_side_pipeline.run_inference_beta(target_array=wall_mic,
+                                                                                           echo_cancel_array=server_closetalk)
 
     print(server_transcript)
     print(customer_transcript)
 
+    prepare_kroto_data.play_audio_array(customer_output_audio)
+    prepare_kroto_data.play_audio_array(server_output_audio)
 
 if __name__ == "__main__":
     main()

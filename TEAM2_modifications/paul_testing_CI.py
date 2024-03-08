@@ -6,11 +6,11 @@ from confidence_intervals import evaluate_with_conf_int
 from sklearn.metrics import accuracy_score
 
 # Need to create an array with the WER per transcript
-samples = 
+samples = None
 # Run the function. In this case, the samples are represented by the categorical decisions
 # made by the system which, along with the labels, is all that is needed to compute the metric.
 
-output = evaluate_with_conf_int(samples = , metric = accuracy_score, conditions = , num_bootstraps=1000, alpha=5)
+output = evaluate_with_conf_int(samples=None, metric = accuracy_score, conditions = , num_bootstraps=1000, alpha=5)
 print(output)
 
 # First number if the metric value on the full dataset. The list indicates the lower and upper bound of the confidence interval

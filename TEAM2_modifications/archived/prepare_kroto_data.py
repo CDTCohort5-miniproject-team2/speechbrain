@@ -230,7 +230,7 @@ class KrotoData:
         print("Cleaning transcripts for WER metric.")
         half_words = re.compile(r"\w+-\s]")
         punctuations = re.compile(r"[,.!?;\-]+(\W|$)")
-        with open("verbal_fillers.txt") as f_obj:
+        with open("../verbal_fillers.txt") as f_obj:
             filler_words_list = "|".join([line.strip() for line in f_obj])
 
         filler_words = re.compile(r"(^|\W)("+filler_words_list+r")($|\W)")

@@ -8,6 +8,7 @@ from num2words import num2words
 CHANNEL_MAPPING = {
     "dashboard_mics": [0, 1, 2, 3],
     # "wall_mics": [4, 5, 6, 7, 8],
+    # this is commented out because we're no longer using all 5 mic arrays, but just the top centre one
     "passengers_closetalk": [10, 11],
     "customer_closetalk": [9],
     "server_closetalk": [12],
