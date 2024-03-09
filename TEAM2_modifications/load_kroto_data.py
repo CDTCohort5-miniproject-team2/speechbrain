@@ -47,7 +47,7 @@ class RawKrotoData:
         """
         # filename of the raw 13-channel audio file should be in Recording File reference
 
-        self.df["scenario_true_id"] = [fname.replace(".wav", "") for fname in self.df["Recording File reference"]]
+        self.df["scenario_true_id"] = [fname.replace(".wav", "").replace("16k_", "") for fname in self.df["Recording File reference"]]
 
         for channel_name, dirpath in zip(self.channel_names, self.sub_array_dirpaths):
             new_audio_fpath_col_name = f"{channel_name}_audio_fpath"
@@ -111,10 +111,12 @@ class RawKrotoData:
             if source_sr != self.target_sr:
                 audio_array = librosa.resample(audio_array, orig_sr=source_sr, target_sr=self.target_sr)
 
+            wav_fpath_stem = str(wav_fpath.stem).replace("16k_", "")
             # BREAK INTO CHANNELS-SPECIFIC AUDIO
             for i, channel_name in enumerate(channel_names):
                 sub_array = get_channels_by_name(audio_array, channel_name)
-                sub_array_fpath = self.sub_array_dirpaths[i] / f"{wav_fpath.stem}_{channel_name}.wav"
+
+                sub_array_fpath = self.sub_array_dirpaths[i] / f"{wav_fpath_stem}_{channel_name}.wav"
 
                 # NB scipy.io.wavfile.write expects (num_samples, num_channels)
                 sub_array = np.swapaxes(sub_array, 0, 1)
@@ -124,11 +126,11 @@ class RawKrotoData:
 
         print("Audio files saved successfully.")
 
-    def get_torch_dataset(self, side="both", dataset_split="Train"):
+    def get_torch_dataset(self, side="both", dataset_split="Training"):
         """
 
         :param side:
-        :param dataset_split: "Train", "Validation" or "Test"
+        :param dataset_split: "Training", "Validation" or "Test"
         :return:
         """
         subset_df = self.df[self.df["Set"] == dataset_split]

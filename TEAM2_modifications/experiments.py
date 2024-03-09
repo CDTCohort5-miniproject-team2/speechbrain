@@ -7,36 +7,7 @@ import scipy
 from scipy import io  # added during debugging
 import scipy.io.wavfile  # added during debugging
 import numpy as np
-
-OUTPUT_DIRS = ["merged_pred_transcript_for_nlp",
-               "merged_pred_transcript_for_wer",
-               "customer_pred_transcript",
-               "customer_processed_array",
-               "server_pred_transcript",
-               "server_processed_array"]
-
-FILEPATH_SUFFIXES = ["merged_pred_transcript_for_nlp.txt",
-                     "merged_pred_transcript_for_wer.txt",
-                     "customer_pred_transcript.txt",
-                     "customer_processed_array.wav",
-                     "server_pred_transcript.txt",
-                     "server_processed_array.wav"]
-
-DESIGNATION = {
-    "baseline": "baseline_w_whisper_large",
-    "adding_enhancer": "aec_enhancer_asr",
-    "adding_separator": "aec_separator_asr",
-    "separator_first": "aec_separator_enhancer_asr",
-    "enhancer_first": "aec_enhancer_separator_asr"
-}
-
-COMPONENTS = {
-    "baseline": ("aec", "asr"),
-    "adding_enhancer": ("aec", "enhancer", "asr"),
-    "adding_separator": ("aec", "separator", "asr"),
-    "separator_first": ("aec", "separator", "enhancer", "asr"),
-    "enhancer_first": ("aec", "enhancer", "separator", "asr")
-}
+import TEAM2_utils
 
 
 class Experiment:
@@ -53,10 +24,10 @@ class Experiment:
         self.side = self._decide_side()
         self.set_split = set_split
 
-        self.designation = DESIGNATION[self.rq]
+        self.designation = TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]
 
         self.parent_output_dir = Path(f"kroto_data/{self.designation}")
-        self.output_dirs = [Path(f"kroto_data/{self.designation}/{subdir}") for subdir in OUTPUT_DIRS]
+        self.output_dirs = [Path(f"kroto_data/{self.designation}/{subdir}") for subdir in TEAM2_utils.EXPERIMENT_OUTPUT_DIRS]
 
     def _initialise_experiment(self):
         self.training_dataset = self._load_torch_set()
@@ -91,7 +62,7 @@ class Experiment:
             # server does not need enhancing/separating
             return audio_pipeline.AudioPipeline(("aec", "asr"))
 
-        return audio_pipeline.AudioPipeline(COMPONENTS[self.rq])
+        return audio_pipeline.AudioPipeline(TEAM2_utils.EXPERIMENT_COMPONENTS[self.rq])
 
     def run_experiment(self):
         self._initialise_experiment()
@@ -99,7 +70,7 @@ class Experiment:
                 server_closetalk, customer_closetalk, single_wall_mic_array) in enumerate(self.training_dataset):
             saving_fpaths = [output_dir / f"{scenario_id}_{fpath_suffix}"
                              for output_dir, fpath_suffix
-                             in zip(self.output_dirs, FILEPATH_SUFFIXES)]
+                             in zip(self.output_dirs, TEAM2_utils.EXPERIMENT_FILEPATH_SUFFIXES)]
             # customer's and server's processed arrays need to be saved for comparison against ground truth later
             c_processed_array, c_transcript = self.customer_audio_pipeline.run_inference_beta(single_wall_mic_array,
                                                                                               server_closetalk)
@@ -118,7 +89,6 @@ class Experiment:
                                                                         save_fpath_for_wer=saving_fpaths[1])
 
 
-
 def main():
     baseline_exp = Experiment("baseline",
                               data_csv_fpath="kroto_data/demo_dataset_split.csv",
@@ -126,7 +96,8 @@ def main():
                               raw_data_directory="kroto_data")
     print("Experiment loaded.")
 
-    baseline_exp.run_experiment()
+    # baseline_exp.run_experiment()
+
 
 if __name__ == "__main__":
     main()
