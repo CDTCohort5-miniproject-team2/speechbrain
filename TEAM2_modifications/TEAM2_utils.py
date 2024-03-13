@@ -5,10 +5,10 @@ from spellchecker import SpellChecker
 from num2words import num2words
 
 CHANNEL_MAPPING = {
-    "dashboard_mics": [0, 1, 2, 3],
+    # "dashboard_mics": [0, 1, 2, 3],  # no longer used in our experiments
     # "wall_mics": [4, 5, 6, 7, 8],
     # this is commented out because we're no longer using all 5 mic arrays, but just the top centre one
-    "passengers_closetalk": [10, 11],
+    # "passengers_closetalk": [10, 11],  # no longer used in our experiments
     "customer_closetalk": [9],
     "server_closetalk": [12],
     "top_centre_wall_mic": [5],
@@ -43,7 +43,7 @@ EXPERIMENT_FILEPATH_SUFFIXES = ["merged_pred_transcript_for_nlp.txt",
                                 "server_processed_array.wav"]
 
 EXPERIMENT_DESIGNATION = {
-    "baseline": "baseline_w_whisper_large",
+    "baseline": "baseline",
     "adding_enhancer": "aec_enhancer_asr",
     "adding_separator": "aec_separator_asr",
     "separator_first": "aec_separator_enhancer_asr",

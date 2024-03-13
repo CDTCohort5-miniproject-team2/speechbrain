@@ -8,6 +8,8 @@ import stable_whisper
 from ssspy.bss.iva import AuxLaplaceIVA
 from TEAM2_modifications.archived import prepare_kroto_data
 import source_sep
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
 print("Importing run_aec")
@@ -44,6 +46,15 @@ class AudioPipeline:
                  long_transcription=True,
                  batch_input=False,
                  normalise_after_enhancing=True):
+        """
+
+        :param components:
+        :param aec_size:
+        :param asr_model_name: ASR model to use e.g. "whisper-large-v3", "whisper-tiny.en"
+        :param long_transcription:
+        :param batch_input:
+        :param normalise_after_enhancing:
+        """
         self.components = components
         self.aec_size = aec_size
         self.long_transcription = long_transcription
@@ -126,13 +137,12 @@ class AudioPipeline:
                                                      savedir="audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement")
         print("Enhancer model initialised.")
 
-    def _initialise_asr(self, simple_stable_ts=True):
+    def _initialise_asr(self):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
         torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
-        model_size = self.asr_model_name.split("-")[1]
+        model_size = self.asr_model_name.split("-")
+        self.asr_model = stable_whisper.load_hf_whisper(model_size[1])
 
-        if simple_stable_ts:
-            self.asr_model = stable_whisper.load_hf_whisper(model_size)
     def _do_aec(self, target_array_nd, echo_array_nd, batch=False):
         # NOTE TO TEAM2: our AEC doesn't support batch-processing, we will need to manually configure this,
         if batch:
@@ -173,11 +183,14 @@ class AudioPipeline:
         return source_sep.do_source_sep(self.separator_model, stereo_audio)[1]  # return the second source
 
     def _do_asr(self, audio_array_1d_or_fpath):
+
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
-
         # https://github.com/jianfch/stable-ts/tree/main
         return self.asr_model.transcribe(audio_array_1d_or_fpath)
+
+
+
 
 def main():
     wall_mics, customer_closetalk, server_closetalk = \

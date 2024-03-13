@@ -8,14 +8,19 @@ from scipy import io  # added during debugging
 import scipy.io.wavfile  # added during debugging
 import numpy as np
 import TEAM2_utils
+from time import time
 
 
 class Experiment:
-    def __init__(self, rq, data_csv_fpath, set_split="Training", raw_data_directory="kroto_data"):
+    def __init__(self, rq, data_csv_fpath, set_split="Training", raw_data_directory="kroto_data",
+                 output_dir_suffix="w_whisper_large", asr_model_name="whisper-large-v3", hpc_test_only=False):
         """
         :param rq: the name of the RQ. Should be one of the following: "baseline", "adding_enhancer", "adding_separator",
         "separator_first", or enhancer_first"
+        :param data_csv_fpath: filepath of data csv, this csv should at minimum include columns with the following headings:
+            "Recording File reference", "Set"
         :param set_split: (str) specifies which partition to load: "Training", "Validation", or "Test"
+        :param asr_model_name: ASR model to use e.g. "whisper-large-v3", "whisper-tiny.en"
         :return:
         """
         self.rq = rq
@@ -23,16 +28,21 @@ class Experiment:
         self.raw_data_directory = raw_data_directory
         self.side = self._decide_side()
         self.set_split = set_split
+        self.asr_model_name = asr_model_name
 
-        self.designation = TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]
+        self.hpc_test_only = hpc_test_only
 
-        self.parent_output_dir = Path(f"kroto_data/{self.designation}")
-        self.output_dirs = [Path(f"kroto_data/{self.designation}/{subdir}") for subdir in TEAM2_utils.EXPERIMENT_OUTPUT_DIRS]
+        self.designation = f"{TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]}_{output_dir_suffix}"
+
+        self.parent_output_dir = Path(f"{raw_data_directory}/{self.designation}")
+        self.output_dirs = [Path(f"{raw_data_directory}/{self.designation}/{subdir}") for subdir in TEAM2_utils.EXPERIMENT_OUTPUT_DIRS]
+
 
     def _initialise_experiment(self):
         self.training_dataset = self._load_torch_set()
         self._make_output_dirs()
         self.customer_audio_pipeline = self._get_pipeline()
+        self.server_audio_pipeline = None
         if self.side == "both":
             self.server_audio_pipeline = self._get_pipeline(server_pipeline=True)
 
@@ -60,17 +70,20 @@ class Experiment:
     def _get_pipeline(self, server_pipeline=False):
         if server_pipeline:
             # server does not need enhancing/separating
-            return audio_pipeline.AudioPipeline(("aec", "asr"))
+            return audio_pipeline.AudioPipeline(("aec", "asr"), asr_model_name=self.asr_model_name)
 
-        return audio_pipeline.AudioPipeline(TEAM2_utils.EXPERIMENT_COMPONENTS[self.rq])
+        return audio_pipeline.AudioPipeline(TEAM2_utils.EXPERIMENT_COMPONENTS[self.rq],
+                                            asr_model_name=self.asr_model_name)
 
     def run_experiment(self):
         self._initialise_experiment()
+        master_start_time = time()
         for i, (scenario_id,
                 server_closetalk, customer_closetalk, single_wall_mic_array) in enumerate(self.training_dataset):
             saving_fpaths = [output_dir / f"{scenario_id}_{fpath_suffix}"
                              for output_dir, fpath_suffix
                              in zip(self.output_dirs, TEAM2_utils.EXPERIMENT_FILEPATH_SUFFIXES)]
+            start_time = time()
             # customer's and server's processed arrays need to be saved for comparison against ground truth later
             c_processed_array, c_transcript = self.customer_audio_pipeline.run_inference_beta(single_wall_mic_array,
                                                                                               server_closetalk)
@@ -88,6 +101,11 @@ class Experiment:
                                                                         save_fpath_for_nlp=saving_fpaths[0],
                                                                         save_fpath_for_wer=saving_fpaths[1])
 
+            print(f"Processed file no. {i} - Audio duration: {len(server_closetalk)/16000} - "
+                  f"Processing duration: {time()-start_time} - Cumulative processing duration: {time()-master_start_time}")
+
+            if i == 2 and self.hpc_test_only:
+                break
 
 def main():
     baseline_exp = Experiment("baseline",

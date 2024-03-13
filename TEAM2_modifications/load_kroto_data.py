@@ -47,7 +47,7 @@ class RawKrotoData:
         """
         # filename of the raw 13-channel audio file should be in Recording File reference
 
-        self.df["scenario_true_id"] = [fname.replace(".wav", "").replace("16k_", "") for fname in self.df["Recording File reference"]]
+        self.df["scenario_true_id"] = [(fname.replace(".wav", "")).replace("16k_", "") for fname in self.df["Recording File reference"]]
 
         for channel_name, dirpath in zip(self.channel_names, self.sub_array_dirpaths):
             new_audio_fpath_col_name = f"{channel_name}_audio_fpath"
@@ -76,12 +76,9 @@ class RawKrotoData:
     def check_if_audio_preprocessed(self):
 
         if any([not dirpath.exists() for dirpath in self.sub_array_dirpaths]):
-            initiate_separate_channels_and_save_audio = input("Raw audio directory loaded. "
-                                                              "Separate out channels, downsample and save audio? (Y/N): ")
-            if "y" in initiate_separate_channels_and_save_audio.lower():
-                print("Separating audio channels for downsampling and saving...")
-                self.preprocess_and_save_audio()
-                print("Audio saved.")
+            print("Raw audio directory loaded. Separating out channels, downsampling and saving audio.")
+            self.preprocess_and_save_audio()
+            print("Audio saved.")
         else:
             print("Processed audio data found and ready for use.")
 
@@ -141,7 +138,7 @@ class KrotoAudioDataset(Dataset):
 
     def __init__(self, subset_df, side="both"):
         self.subset_df = subset_df
-        self.side = side
+        self.side = "both"  # NOTE: this is now hard coded in, due to change in code flow in experiments.py
 
     def __len__(self):
         return len(self.subset_df)

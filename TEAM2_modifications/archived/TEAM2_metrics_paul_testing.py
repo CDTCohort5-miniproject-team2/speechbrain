@@ -88,7 +88,8 @@ def signal_metrics_test():
 
 def main():
     fs, clean_speech = wavfile.read("./test_kroto_data/01_02_24/Audio_customer_closetalk/20240201_103822_scenario_31_customer_closetalk.wav")
-    fs, noisy_speech = wavfile.read("./test_kroto_data/01_02_24/Audio_customer_closetalk/20240201_104336_scenario_24_customer_closetalk.wav")
+    fs, noisy_speech = wavfile.read(
+        "../test_kroto_data/01_02_24/Audio_customer_closetalk/20240201_104336_scenario_24_customer_closetalk.wav")
     
     result_1 = compute_signal_metrics(clean_speech, noisy_speech)
     result_2 = compute_signal_metrics(clean_speech, clean_speech)
