@@ -167,6 +167,7 @@ TEAM2_modifications/test_audio_files/
 TEAM2_modifications/test_kroto_data/
 TEAM2_modifications/audio_pipeline_pretrained_models/
 TEAM2_modifications/kroto_data/
+TEAM2_modifications/old_kroto_data/
 
 # AEC
 DTLN-aec-main/test_audio_files/

@@ -151,9 +151,13 @@ def normalise_for_WER(list_of_lines):
             if any([char.isdigit() for char in _word]):
                 num_list = _word.split(".")
                 for num in num_list:
-                    numword_str = num2words(int(num)).replace(",", "")
-                    numword_str = numword_str.replace("-", "")
-                    new_line.append(numword_str)
+                    try:
+                        numword_str = num2words(int(num))
+                    except ValueError:
+                        pass
+                    else:
+                        numword_str = numword_str.replace("-", " ").replace(",", "")
+                        new_line.append(numword_str)
             else:
                 new_line.append(_word)
         normalised_lines.append(" ".join(new_line))

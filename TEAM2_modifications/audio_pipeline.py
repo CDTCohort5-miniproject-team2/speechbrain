@@ -6,9 +6,9 @@ import stable_whisper
 # NOTE TO TEAM: you will need to pip install optimum to use stable whisper
 # !pip install ssspy
 from ssspy.bss.iva import AuxLaplaceIVA
-from TEAM2_modifications.archived import prepare_kroto_data
 import source_sep
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+import load_kroto_data
+from time import time
 
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
@@ -16,24 +16,18 @@ print("Importing run_aec")
 import run_aec
 print("run_aec imported.")
 
-CATALOGUE = [
-    # adding new recording sessions as they are available
-    "test_kroto_data/18_12_2023",
-    "test_kroto_data/01_02_24",
-]
-kroto_data = prepare_kroto_data.KrotoData(CATALOGUE[1])
-
-def get_test_sample(audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
+def get_test_sample(kroto_data_obj, audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
     """
     Get some sample audio arrays for testing
     :param audio_fstem:
-    :param timeslice:
+    :param kroto_data_obj: an instance of load_kroto_data.RawKrotoData
+    :param timeslice: in seconds
     :param mics: tuple of strings - according to channel mapping, e.g. ("wall_mics", "server_closetalk")
     :return: 2D arrays in the specific order
     """
     mic_arrays = []
     for mic_name in mics:
-        mic_array = kroto_data.get_demo_audio_array(audio_fname=audio_fstem+".wav", downsampled=True,
+        mic_array = kroto_data_obj.get_demo_audio_array(audio_fname=audio_fstem+".wav", downsampled=True,
                                                          timeslice=timeslice, channel_name=mic_name)
         mic_arrays.append(mic_array)
     return mic_arrays
@@ -76,9 +70,18 @@ class AudioPipeline:
             self.speech_pipeline.append((component_name, mapping[component_name][1]))
 
     def run_inference_beta(self, target_array, echo_cancel_array=None):
+        """
+
+        :param target_array:
+        :param echo_cancel_array:
+        :return: processed array, transcription (str), and a list of durations (s) that each component in the pipeline took
+        """
         timestamped_transcript_str = None
+        master_start_time = time()
+        component_wise_times = []
 
         for component_name, component_function in self.speech_pipeline:
+            component_wise_start_time = time()
             if component_name == "aec":
                 target_array = self._do_aec(target_array, echo_cancel_array)
 
@@ -94,29 +97,11 @@ class AudioPipeline:
                 timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
                                                                           filepath=None,
                                                                           segment_level=True,
-                                                                          word_level=False)
-        return target_array, timestamped_transcript_str
+                                                         word_level=False)
+            component_wise_times.append(time()-component_wise_start_time)
+        component_wise_times.insert(0, time()-master_start_time)
 
-    def run_inference(self, target_1d_array, echo_cancel_1d_array=(), transcript_fname="demo"):
-        if self.aec_model and (len(echo_cancel_1d_array) > 0):
-            target_1d_array = self._do_aec(target_1d_array, echo_cancel_1d_array)
-        if self.separator_model:
-            target_1d_array = self._do_separating(target_1d_array)
-        if self.enhancer_model:
-            target_1d_array = self._do_enhancing(target_1d_array)
-
-        transcript_object = self._do_asr(target_1d_array)
-
-        timestamped_transcript_str = stable_whisper.result_to_tsv(transcript_object,
-                                                                  filepath=None,
-                                                                  segment_level=True,
-                                                                  word_level=False)
-
-        with open(f"{transcript_fname}.txt", "w") as f_obj:
-            f_obj.write(timestamped_transcript_str)
-
-        return timestamped_transcript_str
-
+        return target_array, timestamped_transcript_str, component_wise_times
 
     def _initialise_aec(self):
         print("Initialising AEC model.")
@@ -189,12 +174,10 @@ class AudioPipeline:
         # https://github.com/jianfch/stable-ts/tree/main
         return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
-
-
-
 def main():
     wall_mics, customer_closetalk, server_closetalk = \
-        get_test_sample("20240201_104809_scenario_10",
+        get_test_sample(load_kroto_data.RawKrotoData("kroto_data"),
+                        "20240201_104809_scenario_10",
                         timeslice=(0, 0),
                         mics=("wall_mics", "customer_closetalk", "server_closetalk"))
 
@@ -214,9 +197,6 @@ def main():
 
     print(server_transcript)
     print(customer_transcript)
-
-    prepare_kroto_data.play_audio_array(customer_output_audio)
-    prepare_kroto_data.play_audio_array(server_output_audio)
 
 if __name__ == "__main__":
     main()
