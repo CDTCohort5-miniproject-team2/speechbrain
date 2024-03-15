@@ -1,12 +1,10 @@
 # pip install confidence_intervals
 
 import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-from statsmodels.formula.api import ols
-from statsmodels.multivariate.manova import MANOVA
 import matplotlib.pyplot as plt
 import seaborn as sns
+from statsmodels.stats.anova import AnovaRM
+
 
 
 df = pd.read_csv("./baseline_w_whisper_large_results.csv")
@@ -17,20 +15,17 @@ for column in df_filtered.columns:
     if df_filtered[column].isnull().any():
         df_filtered.loc[:, column] = df_filtered[column].fillna(0)
 
-wer_lm = ols('merged_wer ~ C(condition)', data=df_filtered).fit()
-pesq_lm = ols('pesq ~ C(condition)', data=df_filtered).fit()
-stoi_lm = ols('stoi ~ C(condition)', data=df_filtered).fit()
-composite_lm = ols('composite_score_ovl ~ C(condition)', data=df_filtered).fit()
+wer_aovrm = AnovaRM(data=df_filtered, depvar='merged_wer', subject='scenario_id', within=['condition']).fit()
+print("\n \n Repeated Measures ANOVA Table (DV: WER, IV: condition) \n \n", wer_aovrm.summary())
 
-wer_table = sm.stats.anova_lm(wer_lm)
-pesq_table = sm.stats.anova_lm(pesq_lm)
-stoi_table = sm.stats.anova_lm(stoi_lm)
-composite_table = sm.stats.anova_lm(composite_lm)
+pesq_aovrm = AnovaRM(data=df_filtered, depvar='pesq', subject='scenario_id', within=['condition']).fit()
+print("\n \n Repeated Measures ANOVA Table (DV: PESQ, IV: condition) \n \n", pesq_aovrm.summary())
 
-print("\n \n ANOVA Table (DV: WER, IV: condition) \n \n", wer_table)
-print("\n \n ANOVA Table (DV: PESQ, IV: condition) \n \n", pesq_table)
-print("\n \n ANOVA Table (DV: STOI, IV: condition) \n \n", stoi_table)
-print("\n \n ANOVA Table (DV: Composite measure, IV: condition) \n \n", composite_table)
+stoi_aovrm = AnovaRM(data=df_filtered, depvar='stoi', subject='scenario_id', within=['condition']).fit()
+print("\n \n Repeated Measures ANOVA Table (DV: STOI, IV: condition) \n \n", stoi_aovrm.summary())
+
+composite_aovrm = AnovaRM(data=df_filtered, depvar='composite_score_ovl', subject='scenario_id', within=['condition']).fit()
+print("\n \n Repeated Measures ANOVA Table (DV: Composite, IV: condition) \n \n", composite_aovrm.summary())
 
 system_names_mapping = {1: 'baseline', 2: 'SE only', 3: 'SS only', 4: 'SE + SS', 5: 'SS + SE'}
 df_filtered.loc[:, 'condition'] = df_filtered['condition'].map(system_names_mapping)
