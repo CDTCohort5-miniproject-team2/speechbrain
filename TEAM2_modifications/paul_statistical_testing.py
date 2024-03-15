@@ -4,20 +4,18 @@ import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
+from statsmodels.multivariate.manova import MANOVA
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 
 df = pd.read_csv("./baseline_w_whisper_large_results.csv")
 
-df_filtered = df[['scenario_id', 'condition', 'pesq', 'stoi', 'composite_score_ovl', 'merged_wer']]
-
-system_names_mapping = {1: 'baseline', 2: 'SE only', 3: 'SS only', 4: 'SE + SS', 5: 'SS + SE'}
-df_filtered['condition'] = df_filtered['condition'].map(system_names_mapping)
+df_filtered = df[['scenario_id', 'condition', 'noise', 'n_passenger', 'pesq', 'stoi', 'composite_score_ovl', 'merged_wer']]
 
 for column in df_filtered.columns:
     if df_filtered[column].isnull().any():
-        df_filtered[column] = df_filtered[column].fillna(0)
+        df_filtered.loc[:, column] = df_filtered[column].fillna(0)
 
 wer_lm = ols('merged_wer ~ C(condition)', data=df_filtered).fit()
 pesq_lm = ols('pesq ~ C(condition)', data=df_filtered).fit()
@@ -34,6 +32,8 @@ print("\n \n ANOVA Table (DV: PESQ, IV: condition) \n \n", pesq_table)
 print("\n \n ANOVA Table (DV: STOI, IV: condition) \n \n", stoi_table)
 print("\n \n ANOVA Table (DV: Composite measure, IV: condition) \n \n", composite_table)
 
+system_names_mapping = {1: 'baseline', 2: 'SE only', 3: 'SS only', 4: 'SE + SS', 5: 'SS + SE'}
+df_filtered.loc[:, 'condition'] = df_filtered['condition'].map(system_names_mapping)
 
 plt.figure(figsize=(10, 6))
 ax = sns.boxplot(x='condition', y='merged_wer', data=df_filtered, color='#99c2a2')
