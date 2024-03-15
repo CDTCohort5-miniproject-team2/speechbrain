@@ -12,7 +12,7 @@ df = pd.read_csv("./baseline_w_whisper_large_results.csv")
 
 df_filtered = df[['scenario_id', 'condition', 'pesq', 'stoi', 'composite_score_ovl', 'merged_wer']]
 
-system_names_mapping = {1: 'baseline', 2: 'SE only'}
+system_names_mapping = {1: 'baseline', 2: 'SE only', 3: 'SS only', 4: 'SE + SS', 5: 'SS + SE'}
 df_filtered['condition'] = df_filtered['condition'].map(system_names_mapping)
 
 for column in df_filtered.columns:
@@ -38,7 +38,7 @@ print("\n \n ANOVA Table (DV: Composite measure, IV: condition) \n \n", composit
 plt.figure(figsize=(10, 6))
 ax = sns.boxplot(x='condition', y='merged_wer', data=df_filtered, color='#99c2a2')
 ax = sns.swarmplot(x='condition', y='merged_wer', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of wer for each condition')
+plt.title('Box Plot of WER per Condition')
 plt.xlabel('Condition')
 plt.ylabel('Merged WER')
 plt.show()
@@ -46,7 +46,7 @@ plt.show()
 plt.figure(figsize=(10, 6))
 ax = sns.boxplot(x='condition', y='pesq', data=df_filtered, color='#99c2a2')
 ax = sns.swarmplot(x='condition', y='pesq', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of pesq')
+plt.title('Box Plot of PESQ scores per Condition')
 plt.xlabel('Condition')
 plt.ylabel('PESQ')
 plt.show()
@@ -54,15 +54,15 @@ plt.show()
 plt.figure(figsize=(10, 6))
 ax = sns.boxplot(x='condition', y='stoi', data=df_filtered, color='#99c2a2')
 ax = sns.swarmplot(x='condition', y='stoi', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of stoi')
+plt.title('Box Plot of STOI scores per Condition')
 plt.xlabel('Condition')
 plt.ylabel('STOI')
 plt.show()
 
 plt.figure(figsize=(10, 6))
-ax = sns.boxplot(x='condition', y='composite_score', data=df_filtered, color='#99c2a2')
-ax = sns.swarmplot(x='condition', y='composite_score', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of Composite Score')
+ax = sns.boxplot(x='condition', y='composite_score_ovl', data=df_filtered, color='#99c2a2')
+ax = sns.swarmplot(x='condition', y='composite_score_ovl', data=df_filtered, color='#7d0013')
+plt.title('Box Plot of Composite Scores per Condition')
 plt.xlabel('Condition')
 plt.ylabel('Composite Score')
 plt.show()
