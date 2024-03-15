@@ -135,7 +135,7 @@ def spell_check(list_of_lines):
 
 def normalise_for_WER(list_of_lines):
     half_words = re.compile(r"\w+-\s]")
-    punctuations = re.compile(r"[,.!?;\-]+(\W|$)")
+    punctuations = re.compile(r"[,.!?;\-]+(\s|$)")
     with open("verbal_fillers.txt") as f_obj:
         filler_words_list = "|".join([line.strip() for line in f_obj])
     filler_words = re.compile(r"(^|\W)(" + filler_words_list + r")($|\W)")
@@ -144,20 +144,24 @@ def normalise_for_WER(list_of_lines):
     for line in list_of_lines:
         line = re.sub(half_words, " ", line.strip().lower())
         line = re.sub(punctuations, " ", line)
-        line = re.sub(r"[$£,](\S)+", r"\1", line)  # rectify currencies and numbers with commas
+        line = re.sub(r"[$£,]", "", line)  # rectify currencies and numbers with commas
         line = re.sub(filler_words, " ", line)
         new_line = []
         for _word in line.split():
             if any([char.isdigit() for char in _word]):
+                print(_word)
                 num_list = _word.split(".")
                 for num in num_list:
                     try:
                         numword_str = num2words(int(num))
                     except ValueError:
                         pass
+                        print(f"Value of {num} unknown.")
                     else:
                         numword_str = numword_str.replace("-", " ").replace(",", "")
                         new_line.append(numword_str)
+                        print(f"{numword_str} - added to transcript")
+
             else:
                 new_line.append(_word)
         normalised_lines.append(" ".join(new_line))

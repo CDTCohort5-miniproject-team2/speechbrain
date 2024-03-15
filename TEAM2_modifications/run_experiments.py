@@ -6,7 +6,7 @@ def main():
                                                  data_csv_fpath="kroto_data/temporary_data_catalogue.csv",
                                                  set_split="Training",
                                                  raw_data_directory="kroto_data",
-                                                 output_dir_suffix="w_base_en",
+                                                 output_dir_suffix="w_base_en_demo",
                                                  asr_model_name="whisper-base.en",
                                                  test_only=True)
 
