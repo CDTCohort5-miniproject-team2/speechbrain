@@ -1,109 +1,116 @@
+# Load required modules/packages
 import pandas as pd
+import pingouin as pg
 import matplotlib.pyplot as plt
 import seaborn as sns
 from statsmodels.stats.anova import AnovaRM
 from statsmodels.graphics.gofplots import qqplot
 from scipy.stats import shapiro, normaltest, bartlett, levene
 
-df = pd.read_csv("./baseline_w_whisper_large_results.csv")
+def boxplots(depvar, indvar):
+    """
+    Module responsible for creating boxplots
+    """
+    
+    plt.figure(figsize=(10, 6))
+    ax = sns.boxplot(x=indvar, y=depvar, data=df_filtered, color='#99c2a2')
+    ax = sns.swarmplot(x=indvar, y=depvar, data=df_filtered, color='#7d0013')
+    if depvar == 'merged_wer':
+        plt.title('Box Plot of WER per Condition')
+        plt.xlabel('Condition')
+        plt.ylabel('Merged WER')
+    if depvar == 'pesq':
+        plt.title('Box Plot of PESQ per Condition')
+        plt.xlabel('Condition')
+        plt.ylabel('PESQ')
+    if depvar == 'stoi':
+        plt.title('Box Plot of STOI per Condition')
+        plt.xlabel('Condition')
+        plt.ylabel('STOI')
+    if depvar == 'composite_score_ovl':
+        plt.title('Box Plot of Composite Score per Condition')
+        plt.xlabel('Condition')
+        plt.ylabel('Composite Speech Intelligibilty Score')
+    plt.show()
 
-df_filtered = df[['scenario_id', 'condition', 'noise', 'n_passenger', 'pesq', 'stoi', 'composite_score_ovl', 'merged_wer']]
 
-for column in df_filtered.columns:
-    if df_filtered[column].isnull().any():
-        df_filtered.loc[:, column] = df_filtered[column].fillna(0)
+def run_stats_tests(depvar, indvar, conditions):
+    """
+    Module responsible for performing a one way repeated measures ANOVA, post hoc tests and tests of ANOVA assumptions
+    """
+    
+    # One way Repeated Measures ANOVA
+
+    depvar_aovrm = AnovaRM(data=df_filtered, depvar= depvar, subject='scenario_id', within=['condition']).fit()
+    print("\n \n Repeated Measures ANOVA Table (DV: WER, IV: condition) \n \n", depvar_aovrm.summary())
+
+    # Testing normality using histograms and qqplot
+    plt.figure(figsize=(10,6))
+    plt.hist(df_filtered[depvar])
+    plt.show()
+
+    qqplot(df_filtered[depvar], line='s')
+    plt.show()
+
+    # Shapiro-Wilk test of normality
+    alpha = 0.05
+    stat, p = shapiro(df_filtered[depvar])
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    if p > alpha:
+        print('Sample looks Gaussian (fail to reject H0)')
+    else:
+        print('Sample does not look Gaussian (reject H0)')
+
+    # D’Agostino’s K^2 test of normality
+        
+    stat, p = normaltest(df_filtered[depvar])
+    print('Statistics=%.3f, p=%.3f' % (stat, p))
+    if p > alpha:
+        print('Sample looks Gaussian (fail to reject H0)')
+    else:
+        print('Sample does not look Gaussian (reject H0)')
+
+    ## Testing for Homogeneity of Variance - whether the variances are approximately the same across the conditions
+    
+    conditions_data = {}
+    for cond in conditions: 
+        conditions_data[cond] = df_filtered[df_filtered['condition'] == cond][depvar].values
+
+    # Bartlett test - if data is normally distributed
+    test_statistic, p_value = bartlett(*conditions_data.values()) 
+    print(test_statistic, p_value) 
+
+    # Levene's test - if data not normally distributed
+    stat, p = levene(*conditions_data.values())
+    print(test_statistic, p_value)
+
+    ## Testing for Sphericity
+    sphericity_test = pg.sphericity(data = df_filtered, dv = depvar, subject = 'scenario_id', within = [indvar])
+    print(sphericity_test)
+
+    # Post Hoc Pairwise T-test
+
+    p_value = depvar_aovrm.anova_table['Pr > F'][indvar]
+    if p_value < 0.05:
+        post_hocs = pg.pairwise_tests(data = df_filtered, dv=depvar, within = [indvar], subject = 'scenario_id', padjust = 'holm')
+        print(post_hocs)
 
 
-wer_aovrm = AnovaRM(data=df_filtered, depvar='merged_wer', subject='scenario_id', within=['condition']).fit()
-print("\n \n Repeated Measures ANOVA Table (DV: WER, IV: condition) \n \n", wer_aovrm.summary())
+if __name__ == "__main__":
+    df = pd.read_csv("./baseline_w_whisper_large_results.csv")
 
-pesq_aovrm = AnovaRM(data=df_filtered, depvar='pesq', subject='scenario_id', within=['condition']).fit()
-print("\n \n Repeated Measures ANOVA Table (DV: PESQ, IV: condition) \n \n", pesq_aovrm.summary())
+    relevant_col = ['scenario_id', 'condition', 'noise', 'n_passenger', 'pesq', 'stoi', 'composite_score_ovl', 'merged_wer']
 
-stoi_aovrm = AnovaRM(data=df_filtered, depvar='stoi', subject='scenario_id', within=['condition']).fit()
-print("\n \n Repeated Measures ANOVA Table (DV: STOI, IV: condition) \n \n", stoi_aovrm.summary())
+    df_filtered = df[relevant_col].fillna(0)
 
-composite_aovrm = AnovaRM(data=df_filtered, depvar='composite_score_ovl', subject='scenario_id', within=['condition']).fit()
-print("\n \n Repeated Measures ANOVA Table (DV: Composite, IV: condition) \n \n", composite_aovrm.summary())
+    indvar = relevant_col[1]
+    depvar = relevant_col[4:]
+    conditions = df_filtered[indvar].unique().tolist()
+    
 
-system_names_mapping = {1: 'baseline', 2: 'SE only', 3: 'SS only', 4: 'SE + SS', 5: 'SS + SE'}
-df_filtered.loc[:, 'condition'] = df_filtered['condition'].map(system_names_mapping)
+    for variable in depvar: 
+        boxplots(variable, indvar)
 
-plt.figure(figsize=(10, 6))
-ax = sns.boxplot(x='condition', y='merged_wer', data=df_filtered, color='#99c2a2')
-ax = sns.swarmplot(x='condition', y='merged_wer', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of WER per Condition')
-plt.xlabel('Condition')
-plt.ylabel('Merged WER')
-plt.show()
-
-plt.figure(figsize=(10, 6))
-ax = sns.boxplot(x='condition', y='pesq', data=df_filtered, color='#99c2a2')
-ax = sns.swarmplot(x='condition', y='pesq', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of PESQ scores per Condition')
-plt.xlabel('Condition')
-plt.ylabel('PESQ')
-plt.show()
-
-plt.figure(figsize=(10, 6))
-ax = sns.boxplot(x='condition', y='stoi', data=df_filtered, color='#99c2a2')
-ax = sns.swarmplot(x='condition', y='stoi', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of STOI scores per Condition')
-plt.xlabel('Condition')
-plt.ylabel('STOI')
-plt.show()
-
-plt.figure(figsize=(10, 6))
-ax = sns.boxplot(x='condition', y='composite_score_ovl', data=df_filtered, color='#99c2a2')
-ax = sns.swarmplot(x='condition', y='composite_score_ovl', data=df_filtered, color='#7d0013')
-plt.title('Box Plot of Composite Scores per Condition')
-plt.xlabel('Condition')
-plt.ylabel('Composite Score')
-plt.show()
-
-## Testing assumptions of ANOVA
-# Testing the normality of the data
-
-plt.figure(figsize=(10,6))
-plt.hist(df_filtered['merged_wer'])
-plt.show()
-
-qqplot(df_filtered['merged_wer'], line='s')
-plt.show()
-
-# Shapiro-Wilk Test of normality
-stat, p = shapiro(df_filtered['merged_wer'])
-print('Statistics=%.3f, p=%.3f' % (stat, p))
-# interpret
-alpha = 0.05
-if p > alpha:
-    print('Sample looks Gaussian (fail to reject H0)')
-else:
-    print('Sample does not look Gaussian (reject H0)')
-
- # D’Agostino’s K^2 Test of normality
-stat, p = normaltest(df_filtered['merged_wer'])
-print('Statistics=%.3f, p=%.3f' % (stat, p))
-# interpret
-alpha = 0.05
-if p > alpha:
-    print('Sample looks Gaussian (fail to reject H0)')
-else:
-    print('Sample does not look Gaussian (reject H0)')
-
-# Testing for Homogeneity of Variance - whether the variances are approximately the same across the conditions
-
-condition_1 = df_filtered[df_filtered['condition'] == 'baseline']['merged_wer'].values
-condition_2 = df_filtered[df_filtered['condition'] == 'SE_only']['merged_wer'].values
-condition_3 = df_filtered[df_filtered['condition'] == 'SS only']['merged_wer'].values
-condition_4 = df_filtered[df_filtered['condition'] == 'SE + SS']['merged_wer'].values
-condition_5 = df_filtered[df_filtered['condition'] == 'SS + SE']['merged_wer'].values
-
-# Bartlett test - if data is normally distributed
-test_statistic, p_value = bartlett(condition_1, condition_2, condition_3, condition_4, condition_5) 
-print(test_statistic, p_value) 
-
-# Levene's test - if data not normally distributed
-stat, p = levene(condition_1, condition_2, condition_3, condition_4, condition_5)
-print(test_statistic, p_value)
+    for variable in depvar:
+        run_stats_tests(variable, indvar, conditions)
 
