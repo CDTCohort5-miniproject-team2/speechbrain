@@ -149,7 +149,6 @@ def normalise_for_WER(list_of_lines):
         new_line = []
         for _word in line.split():
             if any([char.isdigit() for char in _word]):
-                print(_word)
                 num_list = _word.split(".")
                 for num in num_list:
                     try:
@@ -160,7 +159,6 @@ def normalise_for_WER(list_of_lines):
                     else:
                         numword_str = numword_str.replace("-", " ").replace(",", "")
                         new_line.append(numword_str)
-                        print(f"{numword_str} - added to transcript")
 
             else:
                 new_line.append(_word)
