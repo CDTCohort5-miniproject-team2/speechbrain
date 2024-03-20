@@ -1,6 +1,7 @@
 import torch
 import sys
 import numpy as np
+from speechbrain import pretrained
 from speechbrain.pretrained import SepformerSeparation as separator
 import stable_whisper
 # NOTE TO TEAM: you will need to pip install optimum to use stable whisper
