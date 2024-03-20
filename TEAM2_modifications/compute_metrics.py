@@ -30,7 +30,7 @@ class ExperimentResults:
         self.data_directory = data_directory
         self.save_as_csv = save_as_csv
         self.designation = TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]
-        self.parent_output_dir = Path(f"kroto_data/{self.designation}")
+        self.parent_output_dir = Path(f"kroto_data/{self.designation}_w_medium_en")
         self.save_csv_fpath = self.parent_output_dir/f"{self.designation}_results.csv"
         self.output_dirs = [Path(f"kroto_data/{self.designation}/{subdir}") for subdir in TEAM2_utils.EXPERIMENT_OUTPUT_DIRS]
         self.merged_pred_nlp_dir, self.merged_pred_wer_dir, self.customer_pred_txt_dir, \
@@ -173,7 +173,7 @@ def compute_wer(predicted_fpath, ground_truth_fpath):
     return stats["WER"], stats["num_ref_tokens"]
 
 def main():
-    baseline_demo_results = ExperimentResults("baseline", "kroto_data/demo_dataset_split.csv",
+    baseline_demo_results = ExperimentResults("baseline", "kroto_data/temporary_data_catalogue.csv",
                                               set_split="Training", data_directory="kroto_data", save_as_csv=True)
 
     baseline_demo_results.compute_metrics()

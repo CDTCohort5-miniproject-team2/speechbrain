@@ -3,7 +3,7 @@ import process_transcripts
 
 
 def main():
-    experiment = experiments.Experiment(rq="enhancer_first",
+    experiment = experiments.Experiment(rq="adding_enhancer",
                                         data_csv_fpath="kroto_data/temporary_data_catalogue.csv",
                                         set_split="Training",
                                         raw_data_directory="kroto_data",
