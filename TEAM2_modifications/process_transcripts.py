@@ -23,6 +23,10 @@ def parse_jsonl_folder(jsonl_dirpath="kroto_data/jsonl_transcripts",
         if not Path(save_dir).exists():
             os.mkdir(save_dir)
 
+    if not Path(log_file).exists():
+        with open(log_file, "w") as f_obj:
+            f_obj.write("")
+
     with open(log_fpath) as f_obj:
         already_parsed_jsonl = [line.strip() for line in f_obj.readlines()]
 
