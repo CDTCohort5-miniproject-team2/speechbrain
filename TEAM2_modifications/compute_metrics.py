@@ -13,6 +13,7 @@ import warnings
 from numba import NumbaDeprecationWarning
 warnings.filterwarnings("ignore", category=NumbaDeprecationWarning)
 from tqdm import tqdm
+import re
 
 SAMPLE_RATE = 16000
 
@@ -29,8 +30,8 @@ class ExperimentResults:
         self.set_split = set_split
         self.data_directory = data_directory
         self.save_as_csv = save_as_csv
-        self.designation = TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]
-        self.parent_output_dir = Path(f"kroto_data/{self.designation}_w_medium_en")
+        self.designation = f"{TEAM2_utils.EXPERIMENT_DESIGNATION[self.rq]}_w_medium_en"
+        self.parent_output_dir = Path(f"kroto_data/{self.designation}")
         self.save_csv_fpath = self.parent_output_dir/f"{self.designation}_results.csv"
         self.output_dirs = [Path(f"kroto_data/{self.designation}/{subdir}") for subdir in TEAM2_utils.EXPERIMENT_OUTPUT_DIRS]
         self.merged_pred_nlp_dir, self.merged_pred_wer_dir, self.customer_pred_txt_dir, \
@@ -47,8 +48,22 @@ class ExperimentResults:
             if not output_dir.exists():
                 print("Warning: result subdirectory not found:", output_dir)
                 # this is a warning only, as it might be possible that some are not used
+
+    def get_gt_transcript_prefix_from_scenario_ids(self):
+        transcript_fname_reobj = re.compile(r"(C_)?(?P<date>\d{8})_?(?P<time>\d{6})_?(scenario_)?(?P<scenario_id>\d{1,3})")
+        merged_gt_dir = Path(f"{self.data_directory}/{TEAM2_utils.GROUND_TRUTH_DIRS[0]}")
+
+        for fname in merged_gt_dir.glob("*.txt"):
+            fname_match = re.search(transcript_fname_reobj, fname.stem)
+            if fname_match:
+                print(fname_match["date"], fname_match["time"], fname_match["scenario_id"])
+            else:
+                print(f"Regex couldn't process {fname}")
+
+        pass
+
     def compute_metrics(self):
-        self.original_df["scenario_id"] = [fname.replace(".wav", "") for fname in self.original_df["Recording File reference"]]
+        self.original_df["scenario_id"] = [fname.replace(".wav", "").replace("16k_", "") for fname in self.original_df["Recording File reference"]]
         new_df_col_names = ["pesq", "stoi", "composite_score_sig", "composite_score_bak", "composite_score_ovl",
                             "pesq_v_wall_mic", "stoi_v_wall_mic",
                             "composite_score_v_wall_mic_sig", "composite_score_v_wall_mic_bak",
@@ -176,8 +191,8 @@ def main():
     baseline_demo_results = ExperimentResults("baseline", "kroto_data/temporary_data_catalogue.csv",
                                               set_split="Training", data_directory="kroto_data", save_as_csv=True)
 
-    baseline_demo_results.compute_metrics()
-
+    # baseline_demo_results.compute_metrics()
+    baseline_demo_results.get_gt_transcript_prefix_from_scenario_ids()
 
 if __name__ == "__main__":
     main()
