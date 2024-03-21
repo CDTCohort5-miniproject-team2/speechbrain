@@ -1,5 +1,6 @@
 import collections
 import numpy as np
+import pesq.cypesq
 from scipy import signal
 import pysepm
 from scipy.io import wavfile
@@ -39,6 +40,7 @@ class ExperimentResults:
         self._check_output_dirs()
 
         self.original_df = pd.read_csv(data_csv_fpath)
+        self.original_df["scenario_id"] = [fname.replace(".wav", "").replace("16k_", "") for fname in self.original_df["Recording File reference"]]
 
     def _check_output_dirs(self):
         if not self.parent_output_dir.exists():
@@ -50,20 +52,36 @@ class ExperimentResults:
                 # this is a warning only, as it might be possible that some are not used
 
     def get_gt_transcript_prefix_from_scenario_ids(self):
-        transcript_fname_reobj = re.compile(r"(C_)?(?P<date>\d{8})_?(?P<time>\d{6})_?(scenario_)?(?P<scenario_id>\d{1,3})")
+
+        fname_reobj = re.compile(r"(16k_)?(C_)?(?P<date>\d{8})_?(?P<time>\d{6})_?(scenario_)?(?P<scenario_id>\d{1,3})")
+
+        unified_scenario_ids = []
+        for item in self.original_df["scenario_id"]:
+            item_match = re.search(fname_reobj, item)
+            if item_match:
+                unified_scenario_ids.append("-".join([item_match["date"], item_match["time"], item_match["scenario_id"]]))
+
         merged_gt_dir = Path(f"{self.data_directory}/{TEAM2_utils.GROUND_TRUTH_DIRS[0]}")
 
+        gt_transcript_prefixes = ["" for _ in unified_scenario_ids]
+
         for fname in merged_gt_dir.glob("*.txt"):
-            fname_match = re.search(transcript_fname_reobj, fname.stem)
+            fname_match = re.search(fname_reobj, fname.stem)
             if fname_match:
-                print(fname_match["date"], fname_match["time"], fname_match["scenario_id"])
+                fname_reformed = "-".join([fname_match["date"], fname_match["time"], fname_match["scenario_id"]])
+                try:
+                    fname_idx = unified_scenario_ids.index(fname_reformed)
+                except ValueError:
+                    print(f"{fname.stem} is not found.")
+                else:
+                    gt_transcript_prefixes[fname_idx] = fname.name.replace("_gt_merged_transcript.txt", "")
+
             else:
                 print(f"Regex couldn't process {fname}")
 
-        pass
+        return gt_transcript_prefixes
 
     def compute_metrics(self):
-        self.original_df["scenario_id"] = [fname.replace(".wav", "").replace("16k_", "") for fname in self.original_df["Recording File reference"]]
         new_df_col_names = ["pesq", "stoi", "composite_score_sig", "composite_score_bak", "composite_score_ovl",
                             "pesq_v_wall_mic", "stoi_v_wall_mic",
                             "composite_score_v_wall_mic_sig", "composite_score_v_wall_mic_bak",
@@ -80,10 +98,11 @@ class ExperimentResults:
 
         filter_by_columns = ["scenario_id", "Set"] + new_df_col_names
         self.results_df = self.original_df[filter_by_columns].copy()
-
+        gt_transcript_prefixes = self.get_gt_transcript_prefix_from_scenario_ids()
         print(self.results_df.head())
         print(self.results_df.info())
         for i, scenario_id in enumerate(self.results_df["scenario_id"]):
+            print(f"Parsing file no. {i}: {scenario_id}")
             if self.results_df["Set"][i] != self.set_split:
                 continue
             else:
@@ -92,15 +111,25 @@ class ExperimentResults:
                     [subdir/f"{scenario_id}_{suf}"
                      for subdir, suf in zip(self.output_dirs, TEAM2_utils.EXPERIMENT_FILEPATH_SUFFIXES)]
 
-                merged_gt_fpath, customer_gt_txt_fpath, customer_gt_wall_mic_wav_fpath, \
-                customer_gt_closetalk_wav_fpath, server_gt_txt_fpath, server_gt_wav_fpath = \
+                _, _, customer_gt_wall_mic_wav_fpath, \
+                customer_gt_closetalk_wav_fpath, _, server_gt_wav_fpath = \
                     [Path(f"{self.data_directory}/{subdir}/{scenario_id}_{suf}")
+                     for subdir, suf in zip(TEAM2_utils.GROUND_TRUTH_DIRS, TEAM2_utils.GROUND_TRUTH_SUFFIXES)]
+
+                # call again as filenames are different for ground truth transcripts
+                merged_gt_fpath, customer_gt_txt_fpath, _, _, server_gt_txt_fpath, _ = \
+                    [Path(f"{self.data_directory}/{subdir}/{gt_transcript_prefixes[i]}_{suf}")
                      for subdir, suf in zip(TEAM2_utils.GROUND_TRUTH_DIRS, TEAM2_utils.GROUND_TRUTH_SUFFIXES)]
 
                 if not customer_pred_wav_fpath.exists():
                     continue
                 else:
-                    c_pesq, c_stoi, c_compsig, c_compbak, c_compovl = compute_signal_metrics(customer_gt_closetalk_wav_fpath, customer_pred_wav_fpath)
+                    try:
+                        c_pesq, c_stoi, c_compsig, c_compbak, c_compovl = \
+                            compute_signal_metrics(customer_gt_closetalk_wav_fpath, customer_pred_wav_fpath)
+                    except pesq.cypesq.NoUtterancesError:
+                        print(f"No customer close talk signal for scenario: {scenario_id}")
+                        c_pesq, c_stoi, c_compsig, c_compbak, c_compovl = np.nan, np.nan, np.nan, np.nan, np.nan
                     c_pesq_v_wall_mic, c_stoi_v_wall_mic, c_compsig_v_wall_mic, c_compbak_v_wall_mic, c_compovl_v_wall_mic = \
                         compute_signal_metrics(customer_gt_wall_mic_wav_fpath, customer_pred_wav_fpath)
 
@@ -142,6 +171,7 @@ class ExperimentResults:
                             m_wer, m_num_tokens = compute_wer(merged_pred_wer_fpath, merged_gt_fpath)
                             self.results_df.at[i, "merged_wer"] = m_wer
                             self.results_df.at[i, "merged_num_tokens_in_gt_transcript"] = m_num_tokens
+
 
         print(self.results_df.head())
         print(self.results_df.info())
@@ -191,8 +221,7 @@ def main():
     baseline_demo_results = ExperimentResults("baseline", "kroto_data/temporary_data_catalogue.csv",
                                               set_split="Training", data_directory="kroto_data", save_as_csv=True)
 
-    # baseline_demo_results.compute_metrics()
-    baseline_demo_results.get_gt_transcript_prefix_from_scenario_ids()
+    baseline_demo_results.compute_metrics()
 
 if __name__ == "__main__":
     main()
