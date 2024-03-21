@@ -2,7 +2,6 @@ import collections
 import numpy as np
 import pesq.cypesq
 from scipy import signal
-import pysepm
 from scipy.io import wavfile
 import pysepm
 from pathlib import Path
@@ -82,6 +81,7 @@ class ExperimentResults:
         return gt_transcript_prefixes
 
     def compute_metrics(self):
+
         new_df_col_names = ["pesq", "stoi", "composite_score_sig", "composite_score_bak", "composite_score_ovl",
                             "pesq_v_wall_mic", "stoi_v_wall_mic",
                             "composite_score_v_wall_mic_sig", "composite_score_v_wall_mic_bak",
@@ -96,14 +96,28 @@ class ExperimentResults:
         for col_name in new_df_col_names:
             self.original_df[col_name] = np.nan
 
-        filter_by_columns = ["scenario_id", "Set"] + new_df_col_names
-        self.results_df = self.original_df[filter_by_columns].copy()
-        gt_transcript_prefixes = self.get_gt_transcript_prefix_from_scenario_ids()
+        self.original_df["already_parsed"] = False
+
+        filter_by_columns = ["already_parsed", "scenario_id", "Set", "has_noise", "num_passengers", "audio_duration_in_s"] + new_df_col_names
+        if self.save_csv_fpath.exists():
+            print("Continuing from previous results.")
+            self.results_df = pd.read_csv(self.save_csv_fpath)
+        else:
+            print("Making new results CSV.")
+            self.results_df = self.original_df[filter_by_columns].copy()
+
         print(self.results_df.head())
         print(self.results_df.info())
+
+        gt_transcript_prefixes = self.get_gt_transcript_prefix_from_scenario_ids()
         for i, scenario_id in enumerate(self.results_df["scenario_id"]):
             print(f"Parsing file no. {i}: {scenario_id}")
             if self.results_df["Set"][i] != self.set_split:
+                print(f"Skipping no. {i} - not used")
+                continue
+            elif self.results_df.at[i, "already_parsed"]:
+                print(self.results_df.at[i, "already_parsed"])
+                print(f"Skipping no. {i} - already parsed")
                 continue
             else:
                 merged_pred_nlp_fpath, merged_pred_wer_fpath, customer_pred_txt_fpath, \
@@ -171,12 +185,13 @@ class ExperimentResults:
                             m_wer, m_num_tokens = compute_wer(merged_pred_wer_fpath, merged_gt_fpath)
                             self.results_df.at[i, "merged_wer"] = m_wer
                             self.results_df.at[i, "merged_num_tokens_in_gt_transcript"] = m_num_tokens
-
+            if self.save_as_csv and (i % 3 == 0):
+                self.results_df.to_csv(self.save_csv_fpath, index=False, columns=filter_by_columns)
+            self.results_df.at[i, "already_parsed"] = True
 
         print(self.results_df.head())
         print(self.results_df.info())
-        if self.save_as_csv:
-            self.results_df.to_csv(self.save_csv_fpath, index=False, columns=filter_by_columns)
+        self.results_df.to_csv(self.save_csv_fpath, index=False, columns=filter_by_columns)
 
 def _synchronise_target_and_estimate(reference_audio, processed_audio, mode="simple_crop"):
     if mode == "simple_crop":
@@ -196,9 +211,12 @@ def compute_signal_metrics(reference_audio_fpath, processed_audio_fpath):
     reference_audio, sr = librosa.load(reference_audio_fpath, sr=None)
     processed_audio, sr = librosa.load(processed_audio_fpath, sr=None)
     reference_audio, processed_audio = _synchronise_target_and_estimate(reference_audio, processed_audio)
+
+    # TODO: Yao can you find an alternative github library that 
     _, pesq_value = pysepm.pesq(reference_audio, processed_audio, SAMPLE_RATE)
     stoi_value = pysepm.stoi(reference_audio, processed_audio, SAMPLE_RATE)
     c_score_signal, c_score_background, c_score_overall = pysepm.composite(reference_audio, processed_audio, SAMPLE_RATE)
+
     return pesq_value, stoi_value, c_score_signal, c_score_background, c_score_overall
 
 def compute_wer(predicted_fpath, ground_truth_fpath):
@@ -218,7 +236,7 @@ def compute_wer(predicted_fpath, ground_truth_fpath):
     return stats["WER"], stats["num_ref_tokens"]
 
 def main():
-    baseline_demo_results = ExperimentResults("baseline", "kroto_data/temporary_data_catalogue.csv",
+    baseline_demo_results = ExperimentResults("baseline", "kroto_data/final_data_catalogue.csv",
                                               set_split="Training", data_directory="kroto_data", save_as_csv=True)
 
     baseline_demo_results.compute_metrics()
