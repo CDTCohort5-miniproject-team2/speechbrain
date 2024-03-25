@@ -78,7 +78,6 @@ class Experiment:
 
     def run_experiment(self):
         self._initialise_experiment()
-        # TODO: add in loading partial experiment results to pick up from where stopped
         experiment_record_fpath = self.parent_output_dir/"experiment_duration_records.csv"
         experiment_record = pd.DataFrame(columns=["scenario_id",
                                                   "recording_duration",

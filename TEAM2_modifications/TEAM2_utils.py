@@ -3,6 +3,8 @@ import sounddevice as sd
 import re
 from spellchecker import SpellChecker
 from num2words import num2words
+import pandas as pd
+from pathlib import Path
 
 CHANNEL_MAPPING = {
     # "dashboard_mics": [0, 1, 2, 3],  # no longer used in our experiments
@@ -113,6 +115,24 @@ def get_audio_array_timeslice(audio_array, start_time, end_time, sr=16000):
 
     # TEAM2 fyi: "..." in slicing numpy arrays allows it to accept arrays of an arbitrary number of dimensions
     return audio_array[..., start_sample:end_sample]
+
+def make_temporary_audio_files_csv(data_dirpath, write_csv_to=""):
+    new_df = pd.DataFrame(columns=["Recording File reference", "Set"])
+    new_df["Set"] = "Training"
+
+    audio_folder_dirpath = Path(f"{data_dirpath}/Audio")
+    if not audio_folder_dirpath.exists():
+        raise FileNotFoundError("Directory does not exist")
+
+    for i, audio_path in enumerate(audio_folder_dirpath.glob("*.wav")):
+        audio_name = str(audio_path.name)
+        new_df.at[i, "Recording File reference"] = audio_name
+        new_df.at[i, "Set"] = "Training"
+
+    if write_csv_to == "":
+        write_csv_to = f"{data_dirpath}/temporary_data_catalogue.csv"
+
+    new_df.to_csv(write_csv_to)
 
 
 def main():
