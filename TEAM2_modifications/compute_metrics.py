@@ -211,7 +211,6 @@ def compute_signal_metrics(reference_audio_fpath, processed_audio_fpath):
 
     pesq_value = pesq(reference_audio, processed_audio, SAMPLE_RATE)
     stoi_value = stoi(reference_audio, processed_audio, SAMPLE_RATE)
-    # NO LONGER USED c_score_signal, c_score_background, c_score_overall = pysepm.composite(reference_audio, processed_audio, SAMPLE_RATE)
 
     return pesq_value, stoi_value
 
