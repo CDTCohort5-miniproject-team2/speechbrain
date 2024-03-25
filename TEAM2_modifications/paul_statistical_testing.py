@@ -1,12 +1,14 @@
 # Load required modules/packages
+import numpy as np
+from itertools import combinations
 import pandas as pd
 import pingouin as pg
 import matplotlib.pyplot as plt
 import seaborn as sns
-from statsmodels.stats.anova import AnovaRM
 from statsmodels.graphics.gofplots import qqplot
-from scipy.stats import shapiro, normaltest, kruskal
+from scipy.stats import shapiro, normaltest, kruskal, friedmanchisquare, wilcoxon, mannwhitneyu
 import scikit_posthocs as sp
+from statsmodels.formula.api import mixedlm
 
 
 
@@ -32,17 +34,23 @@ def boxplots(df, depvar, indvar):
     plt.show()
 
 
-def run_anova(df, depvar, indvar):
+def run_anova(df, depvar, withinvar, betweenvars):
     """
     Module responsible for performing a one way repeated measures ANOVA
     """
     
     # One way Repeated Measures ANOVA
+    formula = (f"{depvar} ~ C({withinvar}, Treatment('baseline')) * {' * '.join(betweenvars)} + {'+'.join(betweenvars)}")
+    mixed_model = mixedlm(formula, data=df, groups=df.groupby(betweenvars).grouper.group_info[0])
+    mixed_result = mixed_model.fit()
 
-    depvar_aovrm = AnovaRM(data=df, depvar= depvar, subject='scenario_id', within=[indvar]).fit()
-    print(f"\n \n Repeated Measures ANOVA Table (DV: {depvar}, IV: condition) \n \n", depvar_aovrm.summary())
+    print("\n\nMixed-Design ANOVA Results:")
+    print(mixed_result.summary())
+    #depvar_aovrm = AnovaRM(data=df, depvar= depvar, subject='scenario_id', within=[withinvar], between=betweenvar).fit()
+    #print(f"\n \n Repeated Measures ANOVA Table (DV: {depvar}, IV: condition) \n \n", depvar_aovrm.summary())
 
-    return depvar_aovrm
+    #return depvar_aovrm
+    return mixed_result
 
 def test_anova_assumptions(df, depvar, indvar):
     """
@@ -100,18 +108,63 @@ def run_post_hoc_anova(df, depvar, indvar, depvar_aovrm):
         post_hocs = pg.pairwise_tests(data = df, dv=depvar, within = [indvar], subject = 'scenario_id', padjust = 'holm')
         print(post_hocs)
 
-def kruskall_Wallis_test(df, dep_var, indep_var, subject):
+def kruskall_Wallis_test(df, dep_var, indep_var):
 
-    depv_data = df.pivot_table(index=subject, columns=indep_var, values=dep_var)
+    groups = df.groupby(indep_var)
+    results = []
 
-    depvar_array = depv_data.values
-    stats, p_value = kruskal(*depvar_array.T)
-    print(f"\nKruskal-Wallis Test for {dep_var}:\n Test Statistic: {stats} \n P-value: {p_value}")
+    for group_name, group_data in groups:
+        # Pivot the data based on the subject variable for each group
+        depvar_array = group_data[dep_var].values
 
-    if p_value < 0.05:
-        p_values= sp.posthoc_dunn(depvar_array, p_adjust = 'holm')
-        print(f'\nDunn Test P-value: {p_values}')
- 
+        stats, p_value = kruskal(*depvar_array.T)
+        print(f"\nKruskal-Wallis Test for {dep_var} and {indep_var}:\n Test Statistic: {stats} \n P-value: {p_value}")
+
+        if p_value < 0.05:
+            p_values= sp.posthoc_dunn(depvar_array, p_adjust = 'holm')
+            print(f'\nDunn Test P-value: {p_values}')
+
+        results.append((group_name, stats, p_value))
+
+        print(results)
+
+def mannwhitney(df, dep_var, indep_var):
+    unique_levels = df[indep_var].unique()
+    group_data = []
+    for group in unique_levels:
+        group_data.append(df[df[indep_var] == group][dep_var])
+    
+    statistic, p_value = mannwhitneyu(*group_data)
+
+    print(f"Mann-Whitney U test results for {dep_var} and {indep_var}: \nTest Statistic: {statistic} \n P-value: {p_value}")
+
+
+
+def friedman_test(df, dep_var, indep_var, within_var):
+    # Pivot table for within-subjects variable
+    depv_data_within = df.pivot_table(index=within_var, columns=indep_var, values=dep_var)
+
+    # Remove any NaN values
+    depv_data_within.dropna(inplace=True)
+
+    # Perform the Friedman test
+    stat, p_value = friedmanchisquare(*depv_data_within.values.T)
+    
+    # Print results
+    print(f"\nFriedman Test (DV: {dep_var}, IV: {indep_var}) \n Test Statistic: {stat} \n P-value: {p_value}\n")
+
+def posthoc_wilcoxon(df, dep_var):
+    wilc_test = []
+    grouped_df = df.groupby('condition')
+    group_tuples = list(grouped_df)
+
+    for (condition_i, data_i), (condition_j, data_j) in combinations(group_tuples, 2):
+        if np.mean(data_i[dep_var]) == np.mean(data_j[dep_var]):
+            continue
+        _, p_val = wilcoxon(data_i[dep_var], data_j[dep_var])
+        wilc_test.append((condition_i, condition_j, p_val))
+    result_df = pd.DataFrame(wilc_test, columns=['Condition_1', 'Condition_2', 'p_value'])
+    return result_df
 
 if __name__ == "__main__":
     
@@ -148,27 +201,35 @@ if __name__ == "__main__":
 
     merged_df = merged_df[merged_df['has_noise'] != 'Not used']
     merged_df = merged_df.dropna(subset=['wer'])
-    merged_df['has_noise'] = merged_df['has_noise'].fillna('no noise')
+    merged_df['has_noise'] = merged_df['has_noise'].fillna('no_noise')
     
     
     merged_df['Difference_PESQ_score'] = merged_df['pesq'] - merged_df['CONSTANT_closetalk_v_noisy_wall_mic_pesq']
     merged_df['Difference_STOI_score'] = merged_df['stoi'] - merged_df['CONSTANT_closetalk_v_noisy_wall_mic_stoi']
 
 
-    indvar = 'condition'
+    within_var = 'condition'
+    between_var = ['has_noise', 'num_passengers']
     depvar = ['Difference_STOI_score', 'Difference_PESQ_score', 'wer']
-    conditions = merged_df[indvar].unique().tolist()
 
-    for variable in depvar:
-        boxplots(merged_df, variable, indvar)
-        depvar_aovrm = run_anova(merged_df, variable, indvar)
+    for dv in depvar:
+        boxplots(merged_df, dv, within_var)
         assumption_p_values = []
-        assumption_p_values = test_anova_assumptions(merged_df, variable, indvar)
-        
-        if assumption_p_values[0] < 0.05 or assumption_p_values[1] < 0.05 or assumption_p_values[2] < 0.05:
-            kruskall_Wallis_test(merged_df, variable, indvar, 'scenario_id')
+        assumption_p_values = test_anova_assumptions(merged_df, dv, within_var)
+        if any(p_value < 0.05 for p_value in assumption_p_values):
+            friedman_test(merged_df, dv, within_var, 'scenario_id')
+            encoding = {'baseline': 1, 'SE only': 2, 'SS only': 3, 'SE + SS': 4, 'SS + SE': 5}
+            merged_df['condition'] = merged_df['condition'].replace(encoding)
+            posthoc_results = posthoc_wilcoxon(merged_df[['condition', dv]], dv)
+            print(posthoc_results)
+            mannwhitney(merged_df, dv, between_var[0])
+            kruskall_Wallis_test(merged_df, dv, between_var[1])
+        else:
+            depvar_aovrm = run_anova(merged_df, dv, within_var, between_var)
 
-            
+        
+
+
 
 
 
