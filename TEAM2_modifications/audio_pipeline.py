@@ -70,7 +70,7 @@ class AudioPipeline:
             (mapping[component_name])[0]()
             self.speech_pipeline.append((component_name, mapping[component_name][1]))
 
-    def run_inference_beta(self, target_array, echo_cancel_array=None):
+    def run_inference(self, target_array, echo_cancel_array=None):
         """
 
         :param target_array:
@@ -188,13 +188,13 @@ def main():
 
     server_side_pipeline = AudioPipeline(components=("aec", "asr"))
 
-    server_output_audio, server_transcript = server_side_pipeline.run_inference_beta(target_array=server_closetalk,
-                                                                                     echo_cancel_array=customer_closetalk)
+    server_output_audio, server_transcript, _ = server_side_pipeline.run_inference(target_array=server_closetalk,
+                                                                                   echo_cancel_array=customer_closetalk)
 
     customer_side_pipeline = AudioPipeline(components=("aec", "enhancer", "separator", "asr"))
 
-    customer_output_audio, customer_transcript = customer_side_pipeline.run_inference_beta(target_array=wall_mic,
-                                                                                           echo_cancel_array=server_closetalk)
+    customer_output_audio, customer_transcript, _ = customer_side_pipeline.run_inference(target_array=wall_mic,
+                                                                                         echo_cancel_array=server_closetalk)
 
     print(server_transcript)
     print(customer_transcript)

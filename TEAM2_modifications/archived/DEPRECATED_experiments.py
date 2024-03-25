@@ -58,8 +58,8 @@ def baseline():
                          for baseline_output_dir, fpath_suffix
                          in zip(baseline_output_dirs, FILEPATH_SUFFIXES)]
 
-        c_processed_array, c_transcript = customer_audio_pipeline.run_inference_beta(single_wall_mic_array, server_closetalk)
-        s_processed_array, s_transcript = server_audio_pipeline.run_inference_beta(server_closetalk, customer_closetalk)
+        c_processed_array, c_transcript = customer_audio_pipeline.run_inference(single_wall_mic_array, server_closetalk)
+        s_processed_array, s_transcript = server_audio_pipeline.run_inference(server_closetalk, customer_closetalk)
 
         # customer's and server's processed arrays need to be saved for comparison against ground truth later
         scipy.io.wavfile.write(saving_fpaths[3], 16000, c_processed_array.unsqueeze(-1))

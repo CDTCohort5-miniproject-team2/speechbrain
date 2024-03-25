@@ -161,11 +161,12 @@ dmypy.json
 .DS_Store
 
 # Loaded LibriSpeech dataset
-recipes/LibriSpeech/ASR/transformer/LibriSpeech_dataset/
 miniproject_demo_data/
 TEAM2_modifications/test_audio_files/
 TEAM2_modifications/test_kroto_data/
-TEAM2_modifications/audio_pipeline_pretrained_models/
+TEAM2_modifications/audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement/decoder.ckpt
+TEAM2_modifications/audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement/encoder.ckpt
+TEAM2_modifications/audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement/masknet.ckpt
 TEAM2_modifications/kroto_data/
 TEAM2_modifications/old_kroto_data/
 

@@ -112,7 +112,7 @@ class Experiment:
 
             endtoend_start_time = time()
             # customer's and server's processed arrays need to be saved for comparison against ground truth later
-            c_processed_array, c_transcript, c_timelist = self.customer_audio_pipeline.run_inference_beta(
+            c_processed_array, c_transcript, c_timelist = self.customer_audio_pipeline.run_inference(
                 single_wall_mic_array,
                 server_closetalk)
 
@@ -125,8 +125,8 @@ class Experiment:
             customer_transcript_obj.save_normalised_transcript_for_wer(saving_fpaths[2])
 
             if self.server_audio_pipeline:
-                s_processed_array, s_transcript, s_timelist = self.server_audio_pipeline.run_inference_beta(server_closetalk,
-                                                                                                          customer_closetalk)
+                s_processed_array, s_transcript, s_timelist = self.server_audio_pipeline.run_inference(server_closetalk,
+                                                                                                       customer_closetalk)
 
                 for time_item_i, time_item in enumerate(s_timelist):
                     experiment_record.at[i, server_time_record_cols[time_item_i]] = time_item
