@@ -15,7 +15,7 @@ Version: 27.10.2020
 
 This code is licensed under the terms of the MIT-license.
 
-TEAM2 notes: this is being supplemented to operate on audio arrays (or tensors - TBC) directly rather than on files - the new
+CDT Cohort 5 Team 2: this module has been adapted to operate on audio arrays directly rather than on files - the new
 functions created (adapting from the existing code) are initialise_interpreters() and process_audio().
 """
 
@@ -37,6 +37,11 @@ import tensorflow.lite as tflite
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 def initialise_interpreters(model):
+    """
+    Initialises the AEC model
+    :param model: str - the model variant to be used
+    :return: part 1 and 2 of the AEC model
+    """
     # before using process_audio
     interpreter_1 = tflite.Interpreter(model_path=model + "_1.tflite")
     interpreter_1.allocate_tensors()
@@ -46,6 +51,14 @@ def initialise_interpreters(model):
     return interpreter_1, interpreter_2
 
 def process_audio(interpreter_1, interpreter_2, wall_mic_1d_array, server_closetalk_1d_array):
+    """
+    Uses the provided AEC model to cancel out an acoustic echo from the target signal
+    :param interpreter_1: part 1 of the AEC model, inherited from existing code
+    :param interpreter_2: part 2 of the AEC model, inherited from existing code
+    :param wall_mic_1d_array: 1D-array - the target signal to be processed
+    :param server_closetalk_1d_array: 1D-array - the signal that should be cancelled out from the target signal
+    :return: 1D-array - the processed target signal
+    """
     audio, lpb = wall_mic_1d_array, server_closetalk_1d_array
     if len(audio.shape) > 1 or len(lpb.shape) > 1:
         raise ValueError("Only single channel files are allowed.")
