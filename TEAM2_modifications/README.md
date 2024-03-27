@@ -10,6 +10,7 @@ _Flowchart_
 <img width="1254" alt="speech_pipeline" src="https://github.com/CDTCohort5-miniproject-team2/speechbrain/assets/114949977/23ffbe8a-eb8f-463a-b0a4-f9f6b9988769">
 
 _Module descriptions_
+
 ../DTLN-aec-main/run_aec.py - Implements the AEC component. The authors’ original process_audio() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
 
 ../DTLN-master/run_evaluation.py - Implements the SE component. Similar to the AEC component, the authors’ original process_file() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
@@ -45,9 +46,6 @@ _Flowchart_
 <img width="1243" alt="nlp_pipeline" src="https://github.com/CDTCohort5-miniproject-team2/speechbrain/assets/114949977/8594e889-1ba3-4407-bda8-c11712ff6bdb">
 
 _Module descriptions_
-
-#
-Module descriptions
 
 order_information_EXR.txt - The order information in EXR format, as generated during the recording sessions.
 
