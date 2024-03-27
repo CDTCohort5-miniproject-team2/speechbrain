@@ -2,7 +2,7 @@
 
 This directory contains our implementation of the project's pipeline, (as described in our report), which can be broadly divided into speech-side and NLP-side modules.
 
-For each of the two parts, we provide high-level descriptions of the relevant modules and a flowchart illustrating the interaction of these modules across our pipeline.
+For each of the two parts, we provide a flowchart illustrating the interaction of the relevant modules, as well as high-level descriptions of their functionalities and roles within the pipeline.
 
 **Speech-side modules**
 
