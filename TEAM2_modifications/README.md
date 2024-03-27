@@ -1,12 +1,18 @@
-**Flowchart and descriptions of speech modules**
+**CDT Cohort 5 Team 2 code repository**
 
+This directory contains our implementation of the project's pipeline, (as described in our report), which can be broadly divided into speech-side and NLP-side modules.
+
+For each of the two parts, we provide high-level descriptions of the relevant modules and a flowchart illustrating the interaction of these modules across our pipeline.
+
+**Speech-side modules**
+
+_Flowchart_
 <img width="1254" alt="speech_pipeline" src="https://github.com/CDTCohort5-miniproject-team2/speechbrain/assets/114949977/23ffbe8a-eb8f-463a-b0a4-f9f6b9988769">
 
-Module descriptors
+_Module descriptions_
+../DTLN-aec-main/run_aec.py - Implements the AEC component. The authors’ original process_audio() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
 
-DTLN-aec-main/run_aec.py - Implements the AEC component. The authors’ original process_audio() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
-
-DTLN-master/run_evaluation.py - Implements the SE component. Similar to the AEC component, the authors’ original process_file() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
+../DTLN-master/run_evaluation.py - Implements the SE component. Similar to the AEC component, the authors’ original process_file() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
 
 source_sep.py - Implements the BSS component.
 
@@ -32,3 +38,33 @@ testing_CI.py - Parses csv of experiment results and computes confidence interva
 
 TEAM2_utils.py - Stores auxiliary functions used by various modules in our system
 
+**NLP-side modules**
+
+_Flowchart_
+
+<img width="1243" alt="nlp_pipeline" src="https://github.com/CDTCohort5-miniproject-team2/speechbrain/assets/114949977/8594e889-1ba3-4407-bda8-c11712ff6bdb">
+
+_Module descriptions_
+
+#
+Module descriptions
+
+order_information_EXR.txt - The order information in EXR format, as generated during the recording sessions.
+
+process_labels.py - Processes labels to match our desired hierarchical structure and outputs to JSON format.
+
+order_information_JSON.txt - Text files storing the previously output JSON representations of the order information. To be used as ground-truth labels in evaluation
+
+transcripts.txt - Ground-truth transcripts created from the data generation portion of the project, with server utterances prepended with ‘S:’ and customer utterances with ‘C:’
+
+few_shot_transcripts.txt - Manually created synthetic transcripts to cover diverse range of menu items, for few shot prompting
+
+few_shot_order_info.txt - Manually created order information in JSON structured format to match the few shot transcripts, for few shot prompting
+
+generate_order_info.py - Function to call OpenAI API with chosen model, system prompt, few-shot prompts and transcripts, in order to generate order information
+
+generated_order_information.csv - A CSV representation of the data stored in a Pandas dataframe for each model setup, containing Scenario ID’s, transcripts, ground-truth order info and generated order info. 
+
+evaluation.py - Evaluation function to calculate evaluation metrics according to our test criteria - discussed further in the evaluation section.
+
+final_results.csv - A CSV file containing all results from the evaluation function
