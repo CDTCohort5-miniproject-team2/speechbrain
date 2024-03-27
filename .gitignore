@@ -169,6 +169,7 @@ TEAM2_modifications/audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancem
 TEAM2_modifications/audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement/masknet.ckpt
 TEAM2_modifications/kroto_data/
 TEAM2_modifications/old_kroto_data/
+TEAM2_modifications/partial_outputs/
 
 # AEC
 DTLN-aec-main/test_audio_files/

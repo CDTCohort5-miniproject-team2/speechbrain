@@ -104,6 +104,7 @@ class Experiment:
         master_start_time = time()
         for i, (scenario_id,
                 server_closetalk, customer_closetalk, single_wall_mic_array) in enumerate(self.training_dataset):
+            print(f"Processed file no. {i}")
             saving_fpaths = [output_dir / f"{scenario_id}_{fpath_suffix}"
                              for output_dir, fpath_suffix
                              in zip(self.output_dirs, TEAM2_utils.EXPERIMENT_FILEPATH_SUFFIXES)]

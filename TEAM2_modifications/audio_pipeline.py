@@ -17,6 +17,12 @@ print("Importing run_aec")
 import run_aec
 print("run_aec imported.")
 
+sys.path.append("../DTLN-master")
+print("Importing enhancer module")
+from DTLN_model import DTLN_model
+import run_evaluation as enhancer_module
+print("Enhancer module imported.")
+
 def get_test_sample(kroto_data_obj, audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
     """
     Get some sample audio arrays for testing
@@ -37,10 +43,8 @@ class AudioPipeline:
     def __init__(self,
                  components=("aec", "asr"),
                  aec_size=512,
-                 asr_model_name="whisper-large-v3",
-                 long_transcription=True,
-                 batch_input=False,
-                 normalise_after_enhancing=True):
+                 asr_model_name="whisper-medium.en",
+                 long_transcription=True,):
         """
 
         :param components:
@@ -53,9 +57,7 @@ class AudioPipeline:
         self.components = components
         self.aec_size = aec_size
         self.long_transcription = long_transcription
-        self.batch_input = batch_input
         self.asr_model_name = asr_model_name
-        self.normalise_after_enhancing = normalise_after_enhancing
 
         self.aec_model, self.separator_model, self.enhancer_model, self.asr_model = None, None, None, None
 
@@ -89,7 +91,7 @@ class AudioPipeline:
             elif component_name == "separator":
                 target_array = self._do_separating(target_array)
 
-            elif component_name == "separator":
+            elif component_name == "enhancer":
                 target_array = self._do_enhancing(target_array)
 
             elif component_name == "asr":
@@ -117,11 +119,14 @@ class AudioPipeline:
         self.separator_model = AuxLaplaceIVA()
 
     def _initialise_enhancer(self):
-        print("Initialising enhancer model.")
-        # model belongs to <class 'speechbrain.pretrained.interfaces.SepformerSeparation'>
-        self.enhancer_model = separator.from_hparams(source="speechbrain/sepformer-dns4-16k-enhancement",
-                                                     savedir="audio_pipeline_pretrained_models/sepformer-dns4-16k-enhancement")
-        print("Enhancer model initialised.")
+        # using the DTLN model
+        weights_fpath = "../DTLN-master/pretrained_model/model.h5"
+
+        self.enhancer_model = DTLN_model()
+        self.enhancer_model.build_DTLN_model()
+        self.enhancer_model.model.load_weights(weights_fpath)
+        pass
+
 
     def _initialise_asr(self):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -145,24 +150,8 @@ class AudioPipeline:
 
             return run_aec.process_audio(*self.aec_model, target_array_nd, echo_array_nd)  # 1D array
 
-    def _do_enhancing(self, audio_array, batch=False):
-        # currently takes either a 1D array (n_samples,), or 2D (n_batch, n_samples,) if batch=True
-        audio_tensor = torch.FloatTensor(audio_array)
-        if (not batch) and len(audio_array.shape > 1):
-            audio_tensor = torch.unsqueeze(audio_tensor, 0)
-        # audio_tensor has size (n_batch, n_samples)
-        est_sources = self.enhancer_model.separate_batch(audio_tensor)
-        # est_sources has size (n_batch, n_samples, 1)
-        enhanced_arrays = est_sources[:, :, 0].detach().cpu().numpy()
-        # enhanced_arrays has shape (n_batch, n_samples,)
-
-        for array_idx, _ in enumerate(enhanced_arrays):
-            # check for clipping - adapted from DTLN-aec code
-            if self.normalise_after_enhancing and (np.max(enhanced_arrays[array_idx]) > 1):
-                enhanced_arrays[array_idx] = enhanced_arrays[array_idx] / np.max(enhanced_arrays[array_idx]) * 0.99
-        if not batch:
-            enhanced_arrays = enhanced_arrays.squeeze(0)
-        return enhanced_arrays
+    def _do_enhancing(self, audio_array):
+        return enhancer_module.process_audio_array(self.enhancer_model.model, audio_array)
 
     def _do_separating(self, audio_array_1d):
         stereo_audio = source_sep.make_stereo(audio_array_1d)

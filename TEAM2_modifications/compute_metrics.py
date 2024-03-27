@@ -117,10 +117,7 @@ class ExperimentResults:
                 print(self.results_df.at[i, "already_parsed"])
                 print(f"Skipping no. {i} - already parsed")
                 continue
-            # elif i in [210]:
-            #     # 20240207_113810_scenario_18,
-            #     print("Known problem with signal - skipped")
-            #     continue
+
             else:
 
                 merged_pred_nlp_fpath, merged_pred_wer_fpath, customer_pred_txt_fpath, \
@@ -233,7 +230,7 @@ def compute_wer(predicted_fpath, ground_truth_fpath):
 
 
 def main():
-    for rq in ["adding_enhancer", "adding_separator", "enhancer_first", "separator_first"]:
+    for rq in ["adding_enhancer", "enhancer_first", "separator_first"]:
         print("Computing results for rq:", rq)
         results = ExperimentResults(rq, "kroto_data/final_data_catalogue.csv",
                                     set_split="Training", data_directory="kroto_data", save_as_csv=True)
