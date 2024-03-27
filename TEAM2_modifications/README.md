@@ -8,7 +8,6 @@ For each of the two parts, we provide a flowchart illustrating the interaction o
 
 _Flowchart_
 <img width="1254" alt="speech_pipeline" src="https://github.com/CDTCohort5-miniproject-team2/speechbrain/assets/114949977/23ffbe8a-eb8f-463a-b0a4-f9f6b9988769">
-
 _Module descriptions_
 
 ../DTLN-aec-main/run_aec.py - Implements the AEC component. The authors’ original process_audio() function was adapted to input and output arrays instead of wav files to facilitate integration with the rest of the audio pipeline.
@@ -38,6 +37,8 @@ statistical_testing.py - Parses csv of experiment results and analyses for stati
 testing_CI.py - Parses csv of experiment results and computes confidence intervals
 
 TEAM2_utils.py - Stores auxiliary functions used by various modules in our system
+
+
 
 **NLP-side modules**
 
