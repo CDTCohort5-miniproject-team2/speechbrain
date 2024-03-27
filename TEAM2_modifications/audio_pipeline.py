@@ -4,13 +4,13 @@ import sys
 import numpy as np
 from speechbrain.pretrained import SepformerSeparation as separator
 import stable_whisper
-# NOTE TO TEAM: you will need to pip install optimum to use stable whisper
-# !pip install ssspy
 from ssspy.bss.iva import AuxLaplaceIVA
 import source_sep
 import load_kroto_data
 from time import time
 
+# !pip install optimum
+# !pip install ssspy
 
 sys.path.append("../DTLN-aec-main")  # so that we can import run_aec below
 print("Importing run_aec")
@@ -23,22 +23,6 @@ from DTLN_model import DTLN_model
 import run_evaluation as enhancer_module
 print("Enhancer module imported.")
 
-def get_test_sample(kroto_data_obj, audio_fstem="20240201_114729_scenario_28", timeslice=(2.0, 13.6), mics=("wall_mics", "server_closetalk")):
-    """
-    Get some sample audio arrays for testing
-    :param audio_fstem:
-    :param kroto_data_obj: an instance of load_kroto_data.RawKrotoData
-    :param timeslice: in seconds
-    :param mics: tuple of strings - according to channel mapping, e.g. ("wall_mics", "server_closetalk")
-    :return: 2D arrays in the specific order
-    """
-    mic_arrays = []
-    for mic_name in mics:
-        mic_array = kroto_data_obj.get_demo_audio_array(audio_fname=audio_fstem+".wav", downsampled=True,
-                                                         timeslice=timeslice, channel_name=mic_name)
-        mic_arrays.append(mic_array)
-    return mic_arrays
-
 class AudioPipeline:
     def __init__(self,
                  components=("aec", "asr"),
@@ -46,13 +30,13 @@ class AudioPipeline:
                  asr_model_name="whisper-medium.en",
                  long_transcription=True,):
         """
-
-        :param components:
-        :param aec_size:
+        A class that integrates all speech-side components into a customisable pipeline
+        that runs inference on input audio arrays
+        :param components: (tuple of str) a list of components (order-sensitive) to be included in the pipeline
+        - aec / enhancer / separator / asr
+        :param aec_size: (int) 128, 256 or 512 - model size of our AEC component, see report for further details
         :param asr_model_name: ASR model to use e.g. "whisper-large-v3", "whisper-tiny.en"
         :param long_transcription:
-        :param batch_input:
-        :param normalise_after_enhancing:
         """
         self.components = components
         self.aec_size = aec_size
@@ -74,9 +58,9 @@ class AudioPipeline:
 
     def run_inference(self, target_array, echo_cancel_array=None):
         """
-
-        :param target_array:
-        :param echo_cancel_array:
+        Runs input audio through each component in the pipeline and returns the processed array and predicted transcript
+        :param target_array: 1D array - target signal to be processed
+        :param echo_cancel_array: 1D array - echo signal to be cancelled from the target
         :return: processed array, transcription (str), and a list of durations (s) that each component in the pipeline took
         """
         timestamped_transcript_str = None
@@ -125,28 +109,16 @@ class AudioPipeline:
         self.enhancer_model = DTLN_model()
         self.enhancer_model.build_DTLN_model()
         self.enhancer_model.model.load_weights(weights_fpath)
-        pass
-
 
     def _initialise_asr(self):
-        device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
         model_size = self.asr_model_name.split("-")
         self.asr_model = stable_whisper.load_hf_whisper(model_size[1])
 
-    def _do_aec(self, target_array_nd, echo_array_nd, batch=False):
-        # NOTE TO TEAM2: our AEC doesn't support batch-processing, we will need to manually configure this,
-        if batch:
-            results = np.zeros(target_array_nd.shape)
-            for i, (target_array, echo_array) in enumerate(zip(target_array_nd, echo_array_nd)):
-                results[i] = run_aec.process_audio(*self.aec_model, target_array, echo_array)
-            return results  # 2D array
-
-        else:
-            if len(target_array_nd.shape) > 1:
-                target_array_nd = target_array_nd.squeeze(0)
-            if len(echo_array_nd.shape) > 1:
-                echo_array_nd = echo_array_nd.squeeze(0)
+    def _do_aec(self, target_array_nd, echo_array_nd):
+        if len(target_array_nd.shape) > 1:
+            target_array_nd = target_array_nd.squeeze(0)
+        if len(echo_array_nd.shape) > 1:
+            echo_array_nd = echo_array_nd.squeeze(0)
 
             return run_aec.process_audio(*self.aec_model, target_array_nd, echo_array_nd)  # 1D array
 
@@ -158,35 +130,30 @@ class AudioPipeline:
         return source_sep.do_source_sep(self.separator_model, stereo_audio)[1]  # return the second source
 
     def _do_asr(self, audio_array_1d_or_fpath):
-
         if isinstance(audio_array_1d_or_fpath, np.ndarray) and len(audio_array_1d_or_fpath.shape) == 2:
             audio_array_1d_or_fpath = audio_array_1d_or_fpath.squeeze(0)
         # https://github.com/jianfch/stable-ts/tree/main
         return self.asr_model.transcribe(audio_array_1d_or_fpath)
 
 def main():
-    wall_mics, customer_closetalk, server_closetalk = \
-        get_test_sample(load_kroto_data.RawKrotoData("kroto_data"),
-                        "20240201_104809_scenario_10",
-                        timeslice=(0, 0),
-                        mics=("wall_mics", "customer_closetalk", "server_closetalk"))
-
-    wall_mic, customer_closetalk, server_closetalk = wall_mics[0, :], \
-                                                     customer_closetalk.squeeze(0), \
-                                                     server_closetalk.squeeze(0)
-
     server_side_pipeline = AudioPipeline(components=("aec", "asr"))
-
-    server_output_audio, server_transcript, _ = server_side_pipeline.run_inference(target_array=server_closetalk,
-                                                                                   echo_cancel_array=customer_closetalk)
-
     customer_side_pipeline = AudioPipeline(components=("aec", "enhancer", "separator", "asr"))
 
-    customer_output_audio, customer_transcript, _ = customer_side_pipeline.run_inference(target_array=wall_mic,
-                                                                                         echo_cancel_array=server_closetalk)
+    rawdata = load_kroto_data.RawKrotoData("kroto_data")
+    torch_dataset = rawdata.get_torch_dataset()
+    for i, (scenario_id, server_closetalk, customer_closetalk, top_centre_wall_mic_array) in enumerate(torch_dataset):
 
-    print(server_transcript)
-    print(customer_transcript)
+        server_output_audio, server_transcript, _ = server_side_pipeline.run_inference(target_array=server_closetalk,
+                                                                                       echo_cancel_array=customer_closetalk)
+
+        customer_output_audio, customer_transcript, _ = customer_side_pipeline.run_inference(target_array=top_centre_wall_mic_array,
+                                                                                             echo_cancel_array=server_closetalk)
+
+        print(server_transcript)
+        print(customer_transcript)
+
+        if i == 2:
+            break
 
 if __name__ == "__main__":
     main()

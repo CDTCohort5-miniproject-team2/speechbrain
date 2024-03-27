@@ -1,30 +1,25 @@
 import collections
 import numpy as np
-from scipy import signal
-from scipy.io import wavfile
 from pathlib import Path
 from speechbrain.utils.edit_distance import accumulatable_wer_stats
 import TEAM2_utils
 import pandas as pd
 import librosa
-import warnings
-from numba import NumbaDeprecationWarning
-
-warnings.filterwarnings("ignore", category=NumbaDeprecationWarning)
-from tqdm import tqdm
 import re
 from pb_bss_eval.evaluation import pesq, stoi  # FYI you also need to pip install cython
 
 SAMPLE_RATE = 16000
-
-
 class ExperimentResults:
     def __init__(self, rq, data_csv_fpath, set_split="Training", data_directory="kroto_data", save_as_csv=True):
         """
-        :param rq: the name of the RQ. Should be one of the following: "baseline", "adding_enhancer", "adding_separator",
+        A wrapper class that parses a target results directory and computes metrics
+        :param rq: (str) the name of the experiment condition. Should be one of the following: "baseline", "adding_enhancer", "adding_separator",
         "separator_first", or enhancer_first"
-        :param set_split: (str) specifies which partition to load: "Training", "Validation", or "Test"
-        :return:
+        :param data_csv_fpath: (str) the filepath to the CSV containing a list of scenario IDs and their corresponding metadata
+        :param data_directory: (str) the parent directory of the target results directory
+        :param set_split: (str) specifies which partition to load - this should now always be "Training"
+        :param save_as_csv: (bool) whether to export all computed metrics to an output CSV for statistical analysi
+        :return: an ExperimentResults object
         """
 
         self.rq = rq
@@ -44,6 +39,10 @@ class ExperimentResults:
                                            self.original_df["Recording File reference"]]
 
     def _check_output_dirs(self):
+        """
+        Check that output directories exist
+        :return: None
+        """
         if not self.parent_output_dir.exists():
             raise FileNotFoundError("Experiment results not found. Please make sure correct directory is specified."
                                     "The directory you specified was", self.parent_output_dir)
@@ -53,7 +52,12 @@ class ExperimentResults:
                 # this is a warning only, as it might be possible that some are not used
 
     def get_gt_transcript_prefix_from_scenario_ids(self):
+        """
+        Returns a list of ground truth transcript file stems corresponding to the scenario ID of the predicted experiment
+        outputs, so that WER can be computed.
 
+        :return: list of str - list of ground truth transcript filename stems
+        """
         fname_reobj = re.compile(r"(16k_)?(C_)?(?P<date>\d{8})_?(?P<time>\d{6})_?(scenario_)?(?P<scenario_id>\d{1,3})")
 
         unified_scenario_ids = []
@@ -83,6 +87,11 @@ class ExperimentResults:
         return gt_transcript_prefixes
 
     def compute_metrics(self):
+        """
+        Compute signal metrics and WER by comparing ground truth audio and transcript
+        against processed audio and predicted transcript. Save an output CSV file if save_as_csv=True.
+        :return: None
+        """
 
         new_df_col_names = ["pesq", "stoi",
                             "wer", "num_tokens_in_gt_transcript"]
@@ -186,22 +195,33 @@ class ExperimentResults:
         self.results_df.to_csv(self.save_csv_fpath, index=False, columns=filter_by_columns)
 
 
-def _synchronise_target_and_estimate(reference_audio, processed_audio, mode="simple_crop"):
-    if mode == "simple_crop":
-        length_diff = len(reference_audio) - len(processed_audio)
-        if length_diff > 0:
-            print("Cropping reference audio for alignment")
-            reference_audio = reference_audio[:-length_diff]
-        elif length_diff < 0:
-            print("Cropping processed audio for alignment")
-            processed_audio = processed_audio[:length_diff]
-    else:
-        raise NotImplementedError
+def _synchronise_target_and_estimate(reference_audio, processed_audio):
+    """
+    Simple method of cropping excess, to ensure that reference and processed audio
+    are of the same length before signal metrics are computed.
+    :param reference_audio: ground truth audio array
+    :param processed_audio: processed audio array
+    :return: trimmed ground truth audio array, trimmed processed audio array
+    """
+
+    length_diff = len(reference_audio) - len(processed_audio)
+    if length_diff > 0:
+        print("Cropping reference audio for alignment")
+        reference_audio = reference_audio[:-length_diff]
+    elif length_diff < 0:
+        print("Cropping processed audio for alignment")
+        processed_audio = processed_audio[:length_diff]
 
     return reference_audio, processed_audio
 
 
 def compute_signal_metrics(reference_audio_fpath, processed_audio_fpath):
+    """
+    Computes PESQ and STOI of the processed audio with respect to ground truth audio
+    :param reference_audio_fpath: (str) filepath to ground truth audio
+    :param processed_audio_fpath: (str) filepath to predicted/processed audio
+    :return: PESQ and STOI scores as float values
+    """
     reference_audio, sr = librosa.load(reference_audio_fpath, sr=None)
     processed_audio, sr = librosa.load(processed_audio_fpath, sr=None)
     reference_audio, processed_audio = _synchronise_target_and_estimate(reference_audio, processed_audio)
@@ -213,6 +233,12 @@ def compute_signal_metrics(reference_audio_fpath, processed_audio_fpath):
 
 
 def compute_wer(predicted_fpath, ground_truth_fpath):
+    """
+    Computes WER of the predicted transcript with respect to ground truth
+    :param predicted_fpath: (str) filepath to predicted transcript
+    :param ground_truth_fpath: (str) filepath to ground truth transcript
+    :return: WER as float value
+    """
     # https: // speechbrain.readthedocs.io / en / latest / API / speechbrain.utils.edit_distance.html
     predicted = []
     ground_truth = []
@@ -230,7 +256,7 @@ def compute_wer(predicted_fpath, ground_truth_fpath):
 
 
 def main():
-    for rq in ["adding_enhancer", "enhancer_first", "separator_first"]:
+    for rq in ["baseline", "adding_enhancer", "adding_separator", "enhancer_first", "separator_first"]:
         print("Computing results for rq:", rq)
         results = ExperimentResults(rq, "kroto_data/final_data_catalogue.csv",
                                     set_split="Training", data_directory="kroto_data", save_as_csv=True)

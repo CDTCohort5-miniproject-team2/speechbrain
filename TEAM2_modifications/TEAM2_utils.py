@@ -1,8 +1,5 @@
 import numpy as np
 import sounddevice as sd
-import re
-from spellchecker import SpellChecker
-from num2words import num2words
 import pandas as pd
 from pathlib import Path
 
@@ -63,12 +60,12 @@ EXPERIMENT_COMPONENTS = {
 
 def get_channels_by_name(multichannel_audio_array, target_channel_name):
     """
-
-    :param multichannel_audio_array:
-    :param target_channel_name:
-    :return:
+    Takes a 13-channel audio array and returns the audio channels corresponding to the desired signal
+    :param multichannel_audio_array: multichannel audio array of shape (13, n_samples)
+    :param target_channel_name: the name of the desired signal (e.g. customer_closetalk, server_closetalk, top_centre_wall_mic)
+    :return: the channel-isolated audio array
     """
-    assert multichannel_audio_array.shape[0] in [13, 16], \
+    assert multichannel_audio_array.shape[0] == 13, \
         "The function_get_channels_by_name can only operate on the full 13- or 16-channel array."
     try:
         target_channels = np.array(CHANNEL_MAPPING[target_channel_name])
@@ -84,7 +81,7 @@ def play_audio_array(audio_array, sr=16000):
     Function for playing a (mono or multichannel) audio array for sense check
     :param audio_array: numpy array (n_samples,) or (n_channels, n_samples,)
     :param sr: int - sample rate to use
-    :return:
+    :return: None
     """
     if len(audio_array.shape) == 2:
         # down-mixing multichannel audio for playback on laptop speakers
@@ -100,7 +97,7 @@ def get_audio_array_timeslice(audio_array, start_time, end_time, sr=16000):
     :param start_time: in seconds
     :param end_time: in seconds
     :param sr: int - sample rate to use
-    :return:
+    :return:the sliced array
     """
     if end_time == 0:
         # return the whole array unsliced

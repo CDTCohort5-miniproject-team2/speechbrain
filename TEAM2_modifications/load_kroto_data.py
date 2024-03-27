@@ -6,23 +6,17 @@ from scipy import io  # added during debugging
 import scipy.io.wavfile  # added during debugging
 import os
 import numpy as np
-import sounddevice as sd
 from tqdm import tqdm
-import re
-import torch
 from torch.utils.data import Dataset
 from TEAM2_utils import get_channels_by_name, CHANNEL_MAPPING
 
 
 class RawKrotoData:
-    def __init__(self, data_csv_fpath, parent_dirpath, evaluation=False, csv_already_parsed=False):
+    def __init__(self, data_csv_fpath, parent_dirpath):
         """
-
+        Wrapper class around the directory containing the raw data to be used in our experiments
         :param data_csv_fpath: (str) the csv filepath containing all information about our training/validation/test datasets
         :param parent_dirpath: (str) the parent dataset dirpath containing audio and transcript subdirectories
-        :param evaluation: (boolean) whether to generate additional csv columns containing transcript filepaths etc,
-        to be used to access ground truth and predicted transcript files to compute WER etc
-        :param csv_already_parsed: (boolean)
         """
         if not Path(data_csv_fpath).exists():
             raise FileNotFoundError(f"CSV of dataset split not found at {data_csv_fpath} - check filepath and confirm.")
@@ -36,9 +30,7 @@ class RawKrotoData:
         self.sub_array_dirpaths = [self.parent_dirpath / f"Audio_{channel_name}" for channel_name in self.channel_names]
         self.gt_transcript_dirpaths = [self.parent_dirpath/f"{side}_gt_transcripts" for side in ("merged", "server", "customer")]
 
-        self.evaluation = evaluation
         self.check_if_audio_preprocessed()
-
         self.parse_csv()
 
     def parse_csv(self):
@@ -58,21 +50,6 @@ class RawKrotoData:
 
             self.df[new_audio_fpath_col_name] = audio_fpaths
 
-
-        if self.evaluation:
-            # TODO: fill in code for adding new CSV columns to point to filepaths for ground truth transcripts,
-            #  predicted transcripts, and processed arrays for computing various metrics
-
-            has_transcript = []
-            merged_gt_transcripts_dirpath = self.parent_dirpath/"merged_gt_transcripts"
-            if not merged_gt_transcripts_dirpath.exists():
-                raise FileNotFoundError("Run process_transcript.py first to generate ground truth transcripts")
-
-            for scenario_id in self.df["scenario_true_id"]:
-                merged_gt_transcript_fpath = self.parent_dirpath/f"merged_gt_transcripts/"
-
-            # TODO
-
     def check_if_audio_preprocessed(self):
 
         if any([not dirpath.exists() for dirpath in self.sub_array_dirpaths]):
@@ -90,9 +67,6 @@ class RawKrotoData:
         else:
             print("Processed transcripts found and ready for use.")
 
-    def get_demo_audio_array(self):
-        pass
-
     def preprocess_and_save_audio(self):
         channel_names = list(CHANNEL_MAPPING.keys())
         for sub_array_dirpath in self.sub_array_dirpaths:
@@ -100,8 +74,6 @@ class RawKrotoData:
                 os.mkdir(sub_array_dirpath)
 
         for wav_fpath in tqdm(self.raw_audio_dir.glob("*.wav")):
-
-            # TRIM AUDIO FILE TO GET RID OF STARTING SCENARIO ANNOUNCEMENTS
             audio_array, source_sr = librosa.load(wav_fpath, sr=None, mono=False)
 
             # DOWNSAMPLE
@@ -112,7 +84,6 @@ class RawKrotoData:
             # BREAK INTO CHANNELS-SPECIFIC AUDIO
             for i, channel_name in enumerate(channel_names):
                 sub_array = get_channels_by_name(audio_array, channel_name)
-
                 sub_array_fpath = self.sub_array_dirpaths[i] / f"{wav_fpath_stem}_{channel_name}.wav"
 
                 # NB scipy.io.wavfile.write expects (num_samples, num_channels)
@@ -123,22 +94,20 @@ class RawKrotoData:
 
         print("Audio files saved successfully.")
 
-    def get_torch_dataset(self, side="both", dataset_split="Training"):
+    def get_torch_dataset(self, dataset_split="Training"):
         """
-
-        :param side:
-        :param dataset_split: "Training", "Validation" or "Test"
-        :return:
+        Returns a torch dataset that wraps around the preprocessed dataset directory
+        :param dataset_split: (str) this should now always have the value "Training"
+        :return: a torch dataset
         """
         subset_df = self.df[self.df["Set"] == dataset_split]
-        return KrotoAudioDataset(subset_df, side=side)
+        return KrotoAudioDataset(subset_df)
 
 
 class KrotoAudioDataset(Dataset):
 
-    def __init__(self, subset_df, side="both"):
+    def __init__(self, subset_df):
         self.subset_df = subset_df
-        self.side = "both"  # NOTE: this is now hard coded in, due to change in code flow in experiments.py
 
     def __len__(self):
         return len(self.subset_df)
@@ -147,25 +116,10 @@ class KrotoAudioDataset(Dataset):
         chosen = self.subset_df.iloc[idx]
         scenario_id = chosen["scenario_true_id"]
 
-        if self.side == "server":
-            server_closetalk_array, _ = librosa.load(chosen["server_closetalk_audio_fpath"], sr=None)
-            customer_closetalk_array, _ = librosa.load(chosen["customer_closetalk_audio_fpath"], sr=None)
-            return scenario_id, server_closetalk_array, customer_closetalk_array
-
-        elif self.side == "customer":
-            server_closetalk_array, _ = librosa.load(chosen["server_closetalk_audio_fpath"], sr=None)
-            top_centre_wall_mic_array, _ = librosa.load(chosen["top_centre_wall_mic_audio_fpath"], sr=None)
-            return scenario_id, top_centre_wall_mic_array, server_closetalk_array
-
-        elif self.side == "both":
-            server_closetalk_array, _ = librosa.load(chosen["server_closetalk_audio_fpath"], sr=None)
-            customer_closetalk_array, _ = librosa.load(chosen["customer_closetalk_audio_fpath"], sr=None)
-            top_centre_wall_mic_array, _ = librosa.load(chosen["top_centre_wall_mic_audio_fpath"], sr=None)
-            return scenario_id, server_closetalk_array, customer_closetalk_array, top_centre_wall_mic_array
-
-        else:
-            raise ValueError("side must be either 'server', 'customer' or 'both'")
-
+        server_closetalk_array, _ = librosa.load(chosen["server_closetalk_audio_fpath"], sr=None)
+        customer_closetalk_array, _ = librosa.load(chosen["customer_closetalk_audio_fpath"], sr=None)
+        top_centre_wall_mic_array, _ = librosa.load(chosen["top_centre_wall_mic_audio_fpath"], sr=None)
+        return scenario_id, server_closetalk_array, customer_closetalk_array, top_centre_wall_mic_array
 
 def main():
     print("Loading dataset")
@@ -176,16 +130,6 @@ def main():
     print("Data loaded")
     print(demo_data.df.info())
     print(demo_data.df.head(1))
-    for side in ("customer", "server", "both"):
-        expected_n_outputs = 4 if side == "both" else 3
-        for splitting_partition in ("Training", "Validation", "Test"):
-            demo_data_torch_set = demo_data.get_torch_dataset(side=side, dataset_split=splitting_partition)
-            assert len(demo_data_torch_set) > 0
-            for i, x in enumerate(demo_data_torch_set):
-                assert len(x) == expected_n_outputs
-                break
-
-    print("All torch datasets operational.")
 
 if __name__ == "__main__":
     main()

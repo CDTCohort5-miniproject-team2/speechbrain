@@ -19,11 +19,9 @@ import audio_pipeline
 from pathlib import Path
 import load_kroto_data
 import scipy
-from scipy import io  # added during debugging
-import scipy.io.wavfile  # added during debugging
+from scipy import io
+import scipy.io.wavfile
 import librosa
-import numpy as np
-import os
 import process_transcripts
 
 SAMPLING_RATE = 16000
@@ -36,7 +34,7 @@ separator_component = audio_pipeline.AudioPipeline(components=("separator",),)
 
 
 kroto_data = load_kroto_data.RawKrotoData("kroto_data/final_data_catalogue.csv", "kroto_data")
-kroto_torch_dataset = kroto_data.get_torch_dataset(side="customer", dataset_split="Training")
+kroto_torch_dataset = kroto_data.get_torch_dataset(dataset_split="Training")
 
 
 # PATCHING STEP 1 - RUN AEC ON SOURCE AUDIO (WALL MICROPHONE) AND SAVE AS WAV FILES
@@ -93,11 +91,13 @@ def step4():
 
 
 # PATCHING STEP 5 - STEP 4 CONCLUDES THE AUDIO PROCESSING ELEMENT OF THE EXPERIMENT.
-# WE RENAME AND MOVE ALL PROCESSED AUDIO ARRAYS FROM THE "PARTIAL_OUTPUTS" SUBDIRECTORIES TO THE RELEVANT EXPERIMENT OUTPUT
-# SUBDIRECTORIES UNDER "KROTO_DATA"
-# (E.G. "KROTO_DATA/AEC_ENHANCER_ASR_W_MEDIUM_EN/CUSTOMER_PROCESSED_ARRAY/{SCENARIO ID}_CUSTOMER_PROCESSED_ARRAY").
-# THIS IS TO ENSURE CONSISTENCY WITH OUR PREVIOUS EXPERIMENTS AND SO THAT WE CAN USE
-# COMPUTE_METRICS.PY DOWNSTREAM
+def step5():
+    # WE RENAME AND MOVE ALL PROCESSED AUDIO ARRAYS FROM THE "PARTIAL_OUTPUTS" SUBDIRECTORIES
+    # TO THE RELEVANT EXPERIMENT OUTPUT SUBDIRECTORIES UNDER "KROTO_DATA"
+    # (E.G. "KROTO_DATA/AEC_ENHANCER_ASR_W_MEDIUM_EN/CUSTOMER_PROCESSED_ARRAY/{SCENARIO ID}_CUSTOMER_PROCESSED_ARRAY").
+    # THIS IS TO ENSURE CONSISTENCY WITH OUR PREVIOUS EXPERIMENTS AND SO THAT WE CAN USE
+    # COMPUTE_METRICS.PY DOWNSTREAM
+    pass
 
 # PATCHING STEP 6 - RUN ASR TO GET PREDICTED TRANSCRIPTS W.R.T.
 # (A) (AEC->ENHANCER)-PROCESSED AUDIO;
@@ -131,4 +131,10 @@ def step6():
 
 
 if __name__ == "__main__":
+    # step1() - DONE
+    # step2() - DONE
+    # step3() - DONE
+    # step4() - DONE
+    # step5() - DONE
+    # step6() - DONE
     pass

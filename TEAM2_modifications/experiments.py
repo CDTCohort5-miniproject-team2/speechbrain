@@ -16,12 +16,16 @@ class Experiment:
     def __init__(self, rq, data_csv_fpath, set_split="Training", raw_data_directory="kroto_data",
                  output_dir_suffix="w_whisper_large", asr_model_name="whisper-large-v3", test_only=False):
         """
+        Sets up an experiment by loading the experiment data and initialising audio pipeline(s)
+        corresponding to the condition that we are testing e.g. AEC -> ENHANCER -> ASR
+
         :param rq: the name of the RQ. Should be one of the following: "baseline", "adding_enhancer", "adding_separator",
         "separator_first", or enhancer_first"
         :param data_csv_fpath: filepath of data csv, this csv should at minimum include columns with the following headings:
             "Recording File reference", "Set"
         :param set_split: (str) specifies which partition to load: "Training", "Validation", or "Test"
-        :param asr_model_name: ASR model to use e.g. "whisper-large-v3", "whisper-tiny.en"
+        :param asr_model_name: (str) ASR model to use e.g. "whisper-large-v3", "whisper-tiny.en"
+        :param test_only: (bool) if true, only runs on a small subset of samples, for testing purposes
         :return:
         """
         self.rq = rq
@@ -64,7 +68,7 @@ class Experiment:
 
     def _load_torch_set(self):
         kroto_data = load_kroto_data.RawKrotoData(self.data_csv_fpath, self.raw_data_directory)
-        torch_dataset = kroto_data.get_torch_dataset(side=self.side, dataset_split=self.set_split)
+        torch_dataset = kroto_data.get_torch_dataset(dataset_split=self.set_split)
         # "both" as in we want both customer and server side audio/transcripts etc.
         return torch_dataset
 
@@ -79,6 +83,7 @@ class Experiment:
     def run_experiment(self):
         self._initialise_experiment()
         experiment_record_fpath = self.parent_output_dir/"experiment_duration_records.csv"
+        # initialise a dataframe for duration record keeping
         experiment_record = pd.DataFrame(columns=["scenario_id",
                                                   "recording_duration",
                                                   "customer_total_processing_dur",
@@ -102,6 +107,8 @@ class Experiment:
                                    "server_asr_dur"]
 
         master_start_time = time()
+
+        # running inference on each scenario in the provided dataset
         for i, (scenario_id,
                 server_closetalk, customer_closetalk, single_wall_mic_array) in enumerate(self.training_dataset):
             print(f"Processed file no. {i}")
@@ -120,11 +127,11 @@ class Experiment:
             for time_item_i, time_item in enumerate(c_timelist):
                 experiment_record.at[i, customer_time_record_cols[time_item_i]] = time_item
 
-
             scipy.io.wavfile.write(saving_fpaths[3], 16000, np.expand_dims(c_processed_array, axis=-1))
             customer_transcript_obj = process_transcripts.WhisperGeneratedTranscript(c_transcript, prefix="C")
             customer_transcript_obj.save_normalised_transcript_for_wer(saving_fpaths[2])
 
+            # for efficiency, we only run inference on server-side audio to get merged transcripts in the BASELINE condition
             if self.server_audio_pipeline:
                 s_processed_array, s_transcript, s_timelist = self.server_audio_pipeline.run_inference(server_closetalk,
                                                                                                        customer_closetalk)
