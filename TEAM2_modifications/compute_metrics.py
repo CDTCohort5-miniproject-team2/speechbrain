@@ -222,8 +222,8 @@ def compute_signal_metrics(reference_audio_fpath, processed_audio_fpath):
     :param processed_audio_fpath: (str) filepath to predicted/processed audio
     :return: PESQ and STOI scores as float values
     """
-    reference_audio, sr = librosa.load(reference_audio_fpath, sr=None)
-    processed_audio, sr = librosa.load(processed_audio_fpath, sr=None)
+    reference_audio, sr = librosa.load(reference_audio_fpath, sr=SAMPLE_RATE)
+    processed_audio, sr = librosa.load(processed_audio_fpath, sr=SAMPLE_RATE)
     reference_audio, processed_audio = _synchronise_target_and_estimate(reference_audio, processed_audio)
 
     pesq_value = pesq(reference_audio, processed_audio, SAMPLE_RATE)
